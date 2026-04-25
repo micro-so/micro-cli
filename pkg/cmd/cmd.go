@@ -88,28 +88,6 @@ func init() {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:     "prism",
-				Category: "API RESOURCE",
-				Suggest:  true,
-				Commands: []*cli.Command{
-					&prismCreateObject,
-					&prismDeleteObject,
-					&prismDuplicateObject,
-					&prismImportObjects,
-					&prismPatchObject,
-					&prismRestoreObject,
-				},
-			},
-			{
-				Name:     "prism:grant",
-				Category: "API RESOURCE",
-				Suggest:  true,
-				Commands: []*cli.Command{
-					&prismGrantRetrieveGrant,
-					&prismGrantUpdateGrant,
-				},
-			},
-			{
 				Name:     "prism:query",
 				Category: "API RESOURCE",
 				Suggest:  true,
@@ -118,11 +96,81 @@ func init() {
 				},
 			},
 			{
-				Name:     "prism:metadata",
+				Name:     "contacts",
 				Category: "API RESOURCE",
 				Suggest:  true,
 				Commands: []*cli.Command{
-					&prismMetadataProperties,
+					&contactsCreate,
+					&contactsUpdate,
+					&contactsList,
+					&contactsDelete,
+					&contactsImport,
+				},
+			},
+			{
+				Name:     "organizations",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&organizationsCreate,
+					&organizationsUpdate,
+					&organizationsList,
+					&organizationsDelete,
+					&organizationsImport,
+				},
+			},
+			{
+				Name:     "identities",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&identitiesCreate,
+					&identitiesUpdate,
+					&identitiesList,
+					&identitiesDelete,
+					&identitiesImport,
+				},
+			},
+			{
+				Name:     "deals",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&dealsCreate,
+					&dealsUpdate,
+					&dealsList,
+					&dealsDelete,
+					&dealsImport,
+				},
+			},
+			{
+				Name:     "actions",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&actionsCreate,
+					&actionsUpdate,
+					&actionsList,
+					&actionsDelete,
+				},
+			},
+			{
+				Name:     "events",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&eventsList,
+				},
+			},
+			{
+				Name:     "documents",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&documentsCreate,
+					&documentsUpdate,
+					&documentsList,
+					&documentsDelete,
 				},
 			},
 			{
