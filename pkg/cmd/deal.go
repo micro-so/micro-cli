@@ -31,8 +31,9 @@ var dealsCreate = cli.Command{
 			Name:     "crm",
 			BodyPath: "crm",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "default",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
@@ -65,8 +66,9 @@ var dealsUpdate = cli.Command{
 			Name:     "crm",
 			BodyPath: "crm",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "default",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
@@ -129,7 +131,7 @@ var dealsList = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
-			Usage:      "Filters as [{ slug: { operator: value } }]",
+			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values must be option slugs",
 			InnerField: "filter",
 		},
 		&requestflag.InnerFlag[int64]{
@@ -177,7 +179,7 @@ var dealsImport = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "object",
-			Usage:    "Array of objects to import with their property values",
+			Usage:    "Array of objects to import with property values keyed by slug",
 			Required: true,
 			BodyPath: "objects",
 		},
@@ -198,8 +200,9 @@ var dealsImport = requestflag.WithInnerFlags(cli.Command{
 			Name:       "object.crm",
 			InnerField: "crm",
 		},
-		&requestflag.InnerFlag[any]{
+		&requestflag.InnerFlag[map[string]any]{
 			Name:       "object.default",
+			Usage:      "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
 			InnerField: "default",
 		},
 		&requestflag.InnerFlag[any]{
@@ -220,13 +223,8 @@ var dealsImport = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[string]{
 			Name:       "options.dedupe-by",
-			Usage:      "Property definition ID to deduplicate on",
+			Usage:      "Property slug to deduplicate on",
 			InnerField: "dedupe_by",
-		},
-		&requestflag.InnerFlag[string]{
-			Name:       "options.dedupe-type",
-			Usage:      "Type of the deduplication property",
-			InnerField: "dedupe_type",
 		},
 	},
 })
