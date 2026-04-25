@@ -25,7 +25,7 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.Flag[string]{
 			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action".`,
+			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action", "event".`,
 			Required: true,
 		},
 		&requestflag.Flag[map[string]any]{
@@ -70,7 +70,7 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
-			Usage:      "Filters as [{ slug: { operator: value } }]",
+			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values must be option slugs",
 			InnerField: "filter",
 		},
 		&requestflag.InnerFlag[int64]{

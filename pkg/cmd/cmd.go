@@ -88,11 +88,41 @@ func init() {
 		},
 		Commands: []*cli.Command{
 			{
+				Name:     "prism",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&prismCreateObject,
+					&prismDeleteObject,
+					&prismDuplicateObject,
+					&prismImportObjects,
+					&prismPatchObject,
+					&prismRestoreObject,
+				},
+			},
+			{
+				Name:     "prism:grant",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&prismGrantRetrieveGrant,
+					&prismGrantUpdateGrant,
+				},
+			},
+			{
 				Name:     "prism:query",
 				Category: "API RESOURCE",
 				Suggest:  true,
 				Commands: []*cli.Command{
 					&prismQueryExecute,
+				},
+			},
+			{
+				Name:     "prism:metadata",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&prismMetadataProperties,
 				},
 			},
 			{

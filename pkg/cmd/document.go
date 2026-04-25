@@ -31,8 +31,9 @@ var documentsCreate = cli.Command{
 			Name:     "crm",
 			BodyPath: "crm",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "default",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
@@ -65,8 +66,9 @@ var documentsUpdate = cli.Command{
 			Name:     "crm",
 			BodyPath: "crm",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "default",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
@@ -129,7 +131,7 @@ var documentsList = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
-			Usage:      "Filters as [{ slug: { operator: value } }]",
+			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values must be option slugs",
 			InnerField: "filter",
 		},
 		&requestflag.InnerFlag[int64]{

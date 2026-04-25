@@ -20,7 +20,7 @@ func TestActionsCreate(t *testing.T) {
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
-			"--default", "{}",
+			"--default", "{foo: bar}",
 			"--extended", "{}",
 		)
 	})
@@ -30,7 +30,8 @@ func TestActionsCreate(t *testing.T) {
 		pipeData := []byte("" +
 			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"crm: {}\n" +
-			"default: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
 			"extended: {}\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
@@ -54,7 +55,7 @@ func TestActionsUpdate(t *testing.T) {
 			"--action-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
-			"--default", "{}",
+			"--default", "{foo: bar}",
 			"--extended", "{}",
 		)
 	})
@@ -64,7 +65,8 @@ func TestActionsUpdate(t *testing.T) {
 		pipeData := []byte("" +
 			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"crm: {}\n" +
-			"default: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
 			"extended: {}\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,

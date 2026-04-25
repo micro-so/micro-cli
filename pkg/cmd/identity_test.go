@@ -20,7 +20,7 @@ func TestIdentitiesCreate(t *testing.T) {
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
-			"--default", "{}",
+			"--default", "{foo: bar}",
 			"--extended", "{}",
 		)
 	})
@@ -30,7 +30,8 @@ func TestIdentitiesCreate(t *testing.T) {
 		pipeData := []byte("" +
 			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"crm: {}\n" +
-			"default: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
 			"extended: {}\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
@@ -54,7 +55,7 @@ func TestIdentitiesUpdate(t *testing.T) {
 			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
-			"--default", "{}",
+			"--default", "{foo: bar}",
 			"--extended", "{}",
 		)
 	})
@@ -64,7 +65,8 @@ func TestIdentitiesUpdate(t *testing.T) {
 		pipeData := []byte("" +
 			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"crm: {}\n" +
-			"default: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
 			"extended: {}\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
@@ -173,8 +175,8 @@ func TestIdentitiesImport(t *testing.T) {
 			"--team-id", "string",
 			"identities", "import",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {}, extended: {}}",
-			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_type: str}",
+			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
+			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
 		)
 	})
 
@@ -191,12 +193,11 @@ func TestIdentitiesImport(t *testing.T) {
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--object.crm", "{}",
-			"--object.default", "{}",
+			"--object.default", "{foo: bar}",
 			"--object.extended", "{}",
 			"--options.case-insensitive=true",
 			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--options.dedupe-by", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--options.dedupe-type", "str",
+			"--options.dedupe-by", "dedupe_by",
 		)
 	})
 
@@ -206,13 +207,13 @@ func TestIdentitiesImport(t *testing.T) {
 			"objects:\n" +
 			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"    crm: {}\n" +
-			"    default: {}\n" +
+			"    default:\n" +
+			"      foo: bar\n" +
 			"    extended: {}\n" +
 			"options:\n" +
 			"  caseInsensitive: true\n" +
 			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"  dedupe_by: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"  dedupe_type: str\n")
+			"  dedupe_by: dedupe_by\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
 			"--api-key", "string",
