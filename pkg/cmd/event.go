@@ -14,18 +14,13 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
-	Name:    "execute",
-	Usage:   "Query v2",
+var eventsList = requestflag.WithInnerFlags(cli.Command{
+	Name:    "list",
+	Usage:   "List Events",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "team-id",
-			Required: true,
-		},
-		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action".`,
 			Required: true,
 		},
 		&requestflag.Flag[map[string]any]{
@@ -50,7 +45,7 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 			BodyPath: "sources",
 		},
 	},
-	Action:          handlePrismQueryExecute,
+	Action:          handleEventsList,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"query": {
@@ -89,18 +84,15 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 	},
 })
 
-func handlePrismQueryExecute(ctx context.Context, cmd *cli.Command) error {
+func handleEventsList(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismQueryExecuteParams{
+	params := micro.EventListParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
@@ -117,12 +109,7 @@ func handlePrismQueryExecute(ctx context.Context, cmd *cli.Command) error {
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.Query.Execute(
-		ctx,
-		micro.PrismQueryExecuteParamsObjectType(cmd.Value("object-type").(string)),
-		params,
-		options...,
-	)
+	_, err = client.Events.List(ctx, params, options...)
 	if err != nil {
 		return err
 	}
@@ -135,7 +122,7 @@ func handlePrismQueryExecute(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism:query execute",
+		Title:          "events list",
 		Transform:      transform,
 	})
 }
