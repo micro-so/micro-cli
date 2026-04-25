@@ -82,7 +82,7 @@ var identitiesUpdate = cli.Command{
 
 var identitiesList = requestflag.WithInnerFlags(cli.Command{
 	Name:    "list",
-	Usage:   "List Identitys",
+	Usage:   "List Identities",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
@@ -170,7 +170,7 @@ var identitiesDelete = cli.Command{
 
 var identitiesImport = requestflag.WithInnerFlags(cli.Command{
 	Name:    "import",
-	Usage:   "Import Identitys",
+	Usage:   "Import Identities",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
