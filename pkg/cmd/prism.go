@@ -251,12 +251,29 @@ func handlePrismCreateObject(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	return client.Prism.NewObject(
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.NewObject(
 		ctx,
 		micro.ObjectType(cmd.Value("object-type").(string)),
 		params,
 		options...,
 	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism create-object",
+		Transform:      transform,
+	})
 }
 
 func handlePrismDeleteObject(ctx context.Context, cmd *cli.Command) error {
@@ -435,13 +452,30 @@ func handlePrismPatchObject(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	return client.Prism.PatchObject(
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.PatchObject(
 		ctx,
 		micro.ObjectType(cmd.Value("object-type").(string)),
 		cmd.Value("object-id").(string),
 		params,
 		options...,
 	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism patch-object",
+		Transform:      transform,
+	})
 }
 
 func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
@@ -474,11 +508,28 @@ func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	return client.Prism.RestoreObject(
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.RestoreObject(
 		ctx,
 		micro.ObjectType(cmd.Value("object-type").(string)),
 		cmd.Value("object-id").(string),
 		params,
 		options...,
 	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism restore-object",
+		Transform:      transform,
+	})
 }
