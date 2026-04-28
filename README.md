@@ -44,11 +44,11 @@ micro [resource] <command> [flags...]
 ```
 
 ```sh
-micro contacts list \
+micro prism create-object \
   --api-key 'My API Key' \
   --team-id 'My Team ID' \
   --team-id 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e \
-  --query '{select: [full_name, email]}'
+  --object-type deal
 ```
 
 For details about specific commands, use the `--help` flag.

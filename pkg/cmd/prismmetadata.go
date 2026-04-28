@@ -9,6 +9,8 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/apiquery"
 	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 	"github.com/stainless-sdks/micro-go"
+	"github.com/stainless-sdks/micro-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -69,10 +71,27 @@ func handlePrismMetadataProperties(ctx context.Context, cmd *cli.Command) error 
 		return err
 	}
 
-	return client.Prism.Metadata.Properties(
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Metadata.Properties(
 		ctx,
 		micro.ObjectType(cmd.Value("object-type").(string)),
 		params,
 		options...,
 	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:metadata properties",
+		Transform:      transform,
+	})
 }

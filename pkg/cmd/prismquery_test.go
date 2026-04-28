@@ -19,7 +19,7 @@ func TestPrismQueryExecute(t *testing.T) {
 			"prism:query", "execute",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--object-type", "deal",
-			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 0, page: 0, sort: [{foo: asc}]}",
+			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--box", "string",
 			"--deleted=true",
@@ -43,7 +43,7 @@ func TestPrismQueryExecute(t *testing.T) {
 			"--query.combinator", "AND",
 			"--query.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.filter", "[{foo: {foo: string}}]",
-			"--query.limit", "0",
+			"--query.limit", "1",
 			"--query.page", "0",
 			"--query.sort", "[{foo: asc}]",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -64,7 +64,7 @@ func TestPrismQueryExecute(t *testing.T) {
 			"  filter:\n" +
 			"    - foo:\n" +
 			"        foo: string\n" +
-			"  limit: 0\n" +
+			"  limit: 1\n" +
 			"  page: 0\n" +
 			"  sort:\n" +
 			"    - foo: asc\n" +
