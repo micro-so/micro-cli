@@ -20,13 +20,15 @@ var prismCreateObject = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
 			Name:     "id",
@@ -56,17 +58,20 @@ var prismDeleteObject = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-id",
-			Required: true,
+			Name:      "object-id",
+			Required:  true,
+			PathParam: "objectId",
 		},
 	},
 	Action:          handlePrismDeleteObject,
@@ -79,17 +84,20 @@ var prismDuplicateObject = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-id",
-			Required: true,
+			Name:      "object-id",
+			Required:  true,
+			PathParam: "objectId",
 		},
 	},
 	Action:          handlePrismDuplicateObject,
@@ -102,13 +110,15 @@ var prismImportObjects = requestflag.WithInnerFlags(cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "identity", "organization", "contact", "action", "document", "deal".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "identity", "organization", "contact", "action", "document", "deal".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "object",
@@ -168,17 +178,20 @@ var prismPatchObject = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-id",
-			Required: true,
+			Name:      "object-id",
+			Required:  true,
+			PathParam: "objectId",
 		},
 		&requestflag.Flag[string]{
 			Name:     "id",
@@ -208,17 +221,20 @@ var prismRestoreObject = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-id",
-			Required: true,
+			Name:      "object-id",
+			Required:  true,
+			PathParam: "objectId",
 		},
 	},
 	Action:          handlePrismRestoreObject,
@@ -236,10 +252,6 @@ func handlePrismCreateObject(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismNewObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -249,6 +261,10 @@ func handlePrismCreateObject(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismNewObjectParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
@@ -291,10 +307,6 @@ func handlePrismDeleteObject(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismDeleteObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -304,6 +316,10 @@ func handlePrismDeleteObject(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismDeleteObjectParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	return client.Prism.DeleteObject(
@@ -330,10 +346,6 @@ func handlePrismDuplicateObject(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismDuplicateObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -343,6 +355,10 @@ func handlePrismDuplicateObject(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismDuplicateObjectParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
@@ -382,10 +398,6 @@ func handlePrismImportObjects(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismImportObjectsParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -395,6 +407,10 @@ func handlePrismImportObjects(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismImportObjectsParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
@@ -437,10 +453,6 @@ func handlePrismPatchObject(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismPatchObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -450,6 +462,10 @@ func handlePrismPatchObject(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismPatchObjectParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
@@ -493,10 +509,6 @@ func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismRestoreObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -506,6 +518,10 @@ func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismRestoreObjectParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte

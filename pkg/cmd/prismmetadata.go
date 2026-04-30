@@ -20,13 +20,15 @@ var prismMetadataProperties = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[bool]{
 			Name:      "autofill",
@@ -56,10 +58,6 @@ func handlePrismMetadataProperties(ctx context.Context, cmd *cli.Command) error 
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismMetadataPropertiesParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -69,6 +67,10 @@ func handlePrismMetadataProperties(ctx context.Context, cmd *cli.Command) error 
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismMetadataPropertiesParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte

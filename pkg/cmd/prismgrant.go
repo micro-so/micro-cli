@@ -20,17 +20,20 @@ var prismGrantRetrieveGrant = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-id",
-			Required: true,
+			Name:      "object-id",
+			Required:  true,
+			PathParam: "objectId",
 		},
 	},
 	Action:          handlePrismGrantRetrieveGrant,
@@ -43,17 +46,20 @@ var prismGrantUpdateGrant = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "team-id",
-			Required: true,
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-type",
-			Usage:    `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required: true,
+			Name:      "object-type",
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Required:  true,
+			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
-			Name:     "object-id",
-			Required: true,
+			Name:      "object-id",
+			Required:  true,
+			PathParam: "objectId",
 		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "team-group-id",
@@ -87,10 +93,6 @@ func handlePrismGrantRetrieveGrant(ctx context.Context, cmd *cli.Command) error 
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismGrantGetGrantParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -100,6 +102,10 @@ func handlePrismGrantRetrieveGrant(ctx context.Context, cmd *cli.Command) error 
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismGrantGetGrantParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
@@ -143,10 +149,6 @@ func handlePrismGrantUpdateGrant(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := micro.PrismGrantUpdateGrantParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -156,6 +158,10 @@ func handlePrismGrantUpdateGrant(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := micro.PrismGrantUpdateGrantParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
