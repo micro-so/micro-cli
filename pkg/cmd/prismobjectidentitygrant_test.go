@@ -8,32 +8,16 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/mocktest"
 )
 
-func TestPrismGrantRetrieveGrant(t *testing.T) {
+func TestPrismObjectsIdentitiesGrantUpdate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"prism:grant", "retrieve-grant",
+			"prism:objects:identities:grant", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object-type", "deal",
-			"--object-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-		)
-	})
-}
-
-func TestPrismGrantUpdateGrant(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	t.Run("regular flags", func(t *testing.T) {
-		mocktest.TestRunMockTestWithFlags(
-			t,
-			"--api-key", "string",
-			"--team-id", "string",
-			"prism:grant", "update-grant",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object-type", "deal",
-			"--object-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--team-group-id", "{foo: a}",
 			"--team-id", "{foo: a}",
 			"--user-id", "{foo: a}",
@@ -53,10 +37,23 @@ func TestPrismGrantUpdateGrant(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"prism:grant", "update-grant",
+			"prism:objects:identities:grant", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object-type", "deal",
-			"--object-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsIdentitiesGrantGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities:grant", "get",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }

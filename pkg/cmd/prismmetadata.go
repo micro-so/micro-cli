@@ -14,8 +14,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var prismMetadataProperties = cli.Command{
-	Name:    "properties",
+var prismMetadataList = cli.Command{
+	Name:    "list",
 	Usage:   "Get metadata properties by object type",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -43,11 +43,11 @@ var prismMetadataProperties = cli.Command{
 			QueryPath: "term",
 		},
 	},
-	Action:          handlePrismMetadataProperties,
+	Action:          handlePrismMetadataList,
 	HideHelpCommand: true,
 }
 
-func handlePrismMetadataProperties(ctx context.Context, cmd *cli.Command) error {
+func handlePrismMetadataList(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
@@ -69,15 +69,15 @@ func handlePrismMetadataProperties(ctx context.Context, cmd *cli.Command) error 
 		return err
 	}
 
-	params := micro.PrismMetadataPropertiesParams{
+	params := micro.PrismMetadataListParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.Metadata.Properties(
+	_, err = client.Prism.Metadata.List(
 		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
+		micro.PrismMetadataListParamsObjectType(cmd.Value("object-type").(string)),
 		params,
 		options...,
 	)
@@ -93,7 +93,7 @@ func handlePrismMetadataProperties(ctx context.Context, cmd *cli.Command) error 
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism:metadata properties",
+		Title:          "prism:metadata list",
 		Transform:      transform,
 	})
 }

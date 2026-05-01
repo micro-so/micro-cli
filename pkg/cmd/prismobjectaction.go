@@ -14,8 +14,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var prismCreateObject = cli.Command{
-	Name:    "create-object",
+var prismObjectsActionsCreate = cli.Command{
+	Name:    "create",
 	Usage:   "Create object",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -23,12 +23,6 @@ var prismCreateObject = cli.Command{
 			Name:      "team-id",
 			Required:  true,
 			PathParam: "teamId",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required:  true,
-			PathParam: "objectType",
 		},
 		&requestflag.Flag[string]{
 			Name:     "id",
@@ -48,12 +42,49 @@ var prismCreateObject = cli.Command{
 			BodyPath: "extended",
 		},
 	},
-	Action:          handlePrismCreateObject,
+	Action:          handlePrismObjectsActionsCreate,
 	HideHelpCommand: true,
 }
 
-var prismDeleteObject = cli.Command{
-	Name:    "delete-object",
+var prismObjectsActionsUpdate = cli.Command{
+	Name:    "update",
+	Usage:   "Patch object",
+	Suggest: true,
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
+		},
+		&requestflag.Flag[string]{
+			Name:      "action-id",
+			Required:  true,
+			PathParam: "actionId",
+		},
+		&requestflag.Flag[string]{
+			Name:     "id",
+			BodyPath: "id",
+		},
+		&requestflag.Flag[any]{
+			Name:     "crm",
+			BodyPath: "crm",
+		},
+		&requestflag.Flag[map[string]any]{
+			Name:     "default",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
+			BodyPath: "default",
+		},
+		&requestflag.Flag[any]{
+			Name:     "extended",
+			BodyPath: "extended",
+		},
+	},
+	Action:          handlePrismObjectsActionsUpdate,
+	HideHelpCommand: true,
+}
+
+var prismObjectsActionsDelete = cli.Command{
+	Name:    "delete",
 	Usage:   "Delete object",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -63,49 +94,17 @@ var prismDeleteObject = cli.Command{
 			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Name:      "action-id",
 			Required:  true,
-			PathParam: "objectType",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-id",
-			Required:  true,
-			PathParam: "objectId",
+			PathParam: "actionId",
 		},
 	},
-	Action:          handlePrismDeleteObject,
+	Action:          handlePrismObjectsActionsDelete,
 	HideHelpCommand: true,
 }
 
-var prismDuplicateObject = cli.Command{
-	Name:    "duplicate-object",
-	Usage:   "Duplicate object",
-	Suggest: true,
-	Flags: []cli.Flag{
-		&requestflag.Flag[string]{
-			Name:      "team-id",
-			Required:  true,
-			PathParam: "teamId",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required:  true,
-			PathParam: "objectType",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-id",
-			Required:  true,
-			PathParam: "objectId",
-		},
-	},
-	Action:          handlePrismDuplicateObject,
-	HideHelpCommand: true,
-}
-
-var prismImportObjects = requestflag.WithInnerFlags(cli.Command{
-	Name:    "import-objects",
+var prismObjectsActionsBulkCreate = requestflag.WithInnerFlags(cli.Command{
+	Name:    "bulk-create",
 	Usage:   "Import multiple objects in batch. Properties are keyed by slug. Automatically\nroutes based on size: <100 records sync (immediate response), >=100 records\nasync (S3/Lambda with WebSocket progress)",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -113,12 +112,6 @@ var prismImportObjects = requestflag.WithInnerFlags(cli.Command{
 			Name:      "team-id",
 			Required:  true,
 			PathParam: "teamId",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "identity", "organization", "contact", "action", "document", "deal".`,
-			Required:  true,
-			PathParam: "objectType",
 		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "object",
@@ -131,7 +124,7 @@ var prismImportObjects = requestflag.WithInnerFlags(cli.Command{
 			BodyPath: "options",
 		},
 	},
-	Action:          handlePrismImportObjects,
+	Action:          handlePrismObjectsActionsBulkCreate,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"object": {
@@ -172,9 +165,9 @@ var prismImportObjects = requestflag.WithInnerFlags(cli.Command{
 	},
 })
 
-var prismPatchObject = cli.Command{
-	Name:    "patch-object",
-	Usage:   "Patch object",
+var prismObjectsActionsDuplicate = cli.Command{
+	Name:    "duplicate",
+	Usage:   "Duplicate object",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
@@ -183,40 +176,108 @@ var prismPatchObject = cli.Command{
 			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Name:      "action-id",
 			Required:  true,
-			PathParam: "objectType",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-id",
-			Required:  true,
-			PathParam: "objectId",
-		},
-		&requestflag.Flag[string]{
-			Name:     "id",
-			BodyPath: "id",
-		},
-		&requestflag.Flag[any]{
-			Name:     "crm",
-			BodyPath: "crm",
-		},
-		&requestflag.Flag[map[string]any]{
-			Name:     "default",
-			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
-			BodyPath: "default",
-		},
-		&requestflag.Flag[any]{
-			Name:     "extended",
-			BodyPath: "extended",
+			PathParam: "actionId",
 		},
 	},
-	Action:          handlePrismPatchObject,
+	Action:          handlePrismObjectsActionsDuplicate,
 	HideHelpCommand: true,
 }
 
-var prismRestoreObject = cli.Command{
-	Name:    "restore-object",
+var prismObjectsActionsGet = cli.Command{
+	Name:    "get",
+	Usage:   "Get object",
+	Suggest: true,
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
+		},
+		&requestflag.Flag[string]{
+			Name:      "action-id",
+			Required:  true,
+			PathParam: "actionId",
+		},
+	},
+	Action:          handlePrismObjectsActionsGet,
+	HideHelpCommand: true,
+}
+
+var prismObjectsActionsQuery = requestflag.WithInnerFlags(cli.Command{
+	Name:    "query",
+	Usage:   "Query v2",
+	Suggest: true,
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
+		},
+		&requestflag.Flag[map[string]any]{
+			Name:     "query",
+			Required: true,
+			BodyPath: "query",
+		},
+		&requestflag.Flag[any]{
+			Name:     "id",
+			BodyPath: "id",
+		},
+		&requestflag.Flag[[]string]{
+			Name:     "box",
+			BodyPath: "boxes",
+		},
+		&requestflag.Flag[bool]{
+			Name:     "deleted",
+			BodyPath: "deleted",
+		},
+		&requestflag.Flag[[]string]{
+			Name:     "source",
+			BodyPath: "sources",
+		},
+	},
+	Action:          handlePrismObjectsActionsQuery,
+	HideHelpCommand: true,
+}, map[string][]requestflag.HasOuterFlag{
+	"query": {
+		&requestflag.InnerFlag[[]string]{
+			Name:       "query.select",
+			Usage:      "Property slugs to select. Use dot notation for relationships (e.g. attendee.contact.first_name)",
+			InnerField: "select",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "query.combinator",
+			Usage:      "Logical operator for combining filters",
+			InnerField: "combinator",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "query.crm-id",
+			InnerField: "crm_id",
+		},
+		&requestflag.InnerFlag[[]map[string]any]{
+			Name:       "query.filter",
+			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values must be option slugs",
+			InnerField: "filter",
+		},
+		&requestflag.InnerFlag[int64]{
+			Name:       "query.limit",
+			InnerField: "limit",
+		},
+		&requestflag.InnerFlag[int64]{
+			Name:       "query.page",
+			InnerField: "page",
+		},
+		&requestflag.InnerFlag[[]map[string]any]{
+			Name:       "query.sort",
+			Usage:      "Sort order as [{ slug: direction }]. Array order determines sort priority",
+			InnerField: "sort",
+		},
+	},
+})
+
+var prismObjectsActionsRestore = cli.Command{
+	Name:    "restore",
 	Usage:   "Restore object",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -226,26 +287,63 @@ var prismRestoreObject = cli.Command{
 			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Name:      "action-id",
 			Required:  true,
-			PathParam: "objectType",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-id",
-			Required:  true,
-			PathParam: "objectId",
+			PathParam: "actionId",
 		},
 	},
-	Action:          handlePrismRestoreObject,
+	Action:          handlePrismObjectsActionsRestore,
 	HideHelpCommand: true,
 }
 
-func handlePrismCreateObject(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsActionsCreate(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
+
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	params := micro.PrismObjectActionNewParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Objects.Actions.New(ctx, params, options...)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:objects:actions create",
+		Transform:      transform,
+	})
+}
+
+func handlePrismObjectsActionsUpdate(ctx context.Context, cmd *cli.Command) error {
+	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("action-id") && len(unusedArgs) > 0 {
+		cmd.Set("action-id", unusedArgs[0])
 		unusedArgs = unusedArgs[1:]
 	}
 	if len(unusedArgs) > 0 {
@@ -263,15 +361,15 @@ func handlePrismCreateObject(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	params := micro.PrismNewObjectParams{
+	params := micro.PrismObjectActionUpdateParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.NewObject(
+	_, err = client.Prism.Objects.Actions.Update(
 		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
+		cmd.Value("action-id").(string),
 		params,
 		options...,
 	)
@@ -287,20 +385,16 @@ func handlePrismCreateObject(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism create-object",
+		Title:          "prism:objects:actions update",
 		Transform:      transform,
 	})
 }
 
-func handlePrismDeleteObject(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsActionsDelete(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if !cmd.IsSet("object-id") && len(unusedArgs) > 0 {
-		cmd.Set("object-id", unusedArgs[0])
+	if !cmd.IsSet("action-id") && len(unusedArgs) > 0 {
+		cmd.Set("action-id", unusedArgs[0])
 		unusedArgs = unusedArgs[1:]
 	}
 	if len(unusedArgs) > 0 {
@@ -318,82 +412,22 @@ func handlePrismDeleteObject(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	params := micro.PrismDeleteObjectParams{
+	params := micro.PrismObjectActionDeleteParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
-	return client.Prism.DeleteObject(
+	return client.Prism.Objects.Actions.Delete(
 		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
-		cmd.Value("object-id").(string),
+		cmd.Value("action-id").(string),
 		params,
 		options...,
 	)
 }
 
-func handlePrismDuplicateObject(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsActionsBulkCreate(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if !cmd.IsSet("object-id") && len(unusedArgs) > 0 {
-		cmd.Set("object-id", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 
-	options, err := flagOptions(
-		cmd,
-		apiquery.NestedQueryFormatBrackets,
-		apiquery.ArrayQueryFormatComma,
-		EmptyBody,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-
-	params := micro.PrismDuplicateObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.DuplicateObject(
-		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
-		cmd.Value("object-id").(string),
-		params,
-		options...,
-	)
-	if err != nil {
-		return err
-	}
-
-	obj := gjson.ParseBytes(res)
-	format := cmd.Root().String("format")
-	explicitFormat := cmd.Root().IsSet("format")
-	transform := cmd.Root().String("transform")
-	return ShowJSON(obj, ShowJSONOpts{
-		ExplicitFormat: explicitFormat,
-		Format:         format,
-		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism duplicate-object",
-		Transform:      transform,
-	})
-}
-
-func handlePrismImportObjects(ctx context.Context, cmd *cli.Command) error {
-	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
-	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -409,18 +443,13 @@ func handlePrismImportObjects(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	params := micro.PrismImportObjectsParams{
+	params := micro.PrismObjectActionBulkNewParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.ImportObjects(
-		ctx,
-		micro.PrismImportObjectsParamsObjectType(cmd.Value("object-type").(string)),
-		params,
-		options...,
-	)
+	_, err = client.Prism.Objects.Actions.BulkNew(ctx, params, options...)
 	if err != nil {
 		return err
 	}
@@ -433,76 +462,16 @@ func handlePrismImportObjects(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism import-objects",
+		Title:          "prism:objects:actions bulk-create",
 		Transform:      transform,
 	})
 }
 
-func handlePrismPatchObject(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsActionsDuplicate(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if !cmd.IsSet("object-id") && len(unusedArgs) > 0 {
-		cmd.Set("object-id", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	options, err := flagOptions(
-		cmd,
-		apiquery.NestedQueryFormatBrackets,
-		apiquery.ArrayQueryFormatComma,
-		ApplicationJSON,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-
-	params := micro.PrismPatchObjectParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.PatchObject(
-		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
-		cmd.Value("object-id").(string),
-		params,
-		options...,
-	)
-	if err != nil {
-		return err
-	}
-
-	obj := gjson.ParseBytes(res)
-	format := cmd.Root().String("format")
-	explicitFormat := cmd.Root().IsSet("format")
-	transform := cmd.Root().String("transform")
-	return ShowJSON(obj, ShowJSONOpts{
-		ExplicitFormat: explicitFormat,
-		Format:         format,
-		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism patch-object",
-		Transform:      transform,
-	})
-}
-
-func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
-	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
-	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if !cmd.IsSet("object-id") && len(unusedArgs) > 0 {
-		cmd.Set("object-id", unusedArgs[0])
+	if !cmd.IsSet("action-id") && len(unusedArgs) > 0 {
+		cmd.Set("action-id", unusedArgs[0])
 		unusedArgs = unusedArgs[1:]
 	}
 	if len(unusedArgs) > 0 {
@@ -520,16 +489,15 @@ func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	params := micro.PrismRestoreObjectParams{
+	params := micro.PrismObjectActionDuplicateParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.RestoreObject(
+	_, err = client.Prism.Objects.Actions.Duplicate(
 		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
-		cmd.Value("object-id").(string),
+		cmd.Value("action-id").(string),
 		params,
 		options...,
 	)
@@ -545,7 +513,152 @@ func handlePrismRestoreObject(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism restore-object",
+		Title:          "prism:objects:actions duplicate",
+		Transform:      transform,
+	})
+}
+
+func handlePrismObjectsActionsGet(ctx context.Context, cmd *cli.Command) error {
+	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("action-id") && len(unusedArgs) > 0 {
+		cmd.Set("action-id", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		EmptyBody,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	params := micro.PrismObjectActionGetParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Objects.Actions.Get(
+		ctx,
+		cmd.Value("action-id").(string),
+		params,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:objects:actions get",
+		Transform:      transform,
+	})
+}
+
+func handlePrismObjectsActionsQuery(ctx context.Context, cmd *cli.Command) error {
+	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	params := micro.PrismObjectActionQueryParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Objects.Actions.Query(ctx, params, options...)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:objects:actions query",
+		Transform:      transform,
+	})
+}
+
+func handlePrismObjectsActionsRestore(ctx context.Context, cmd *cli.Command) error {
+	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("action-id") && len(unusedArgs) > 0 {
+		cmd.Set("action-id", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		EmptyBody,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	params := micro.PrismObjectActionRestoreParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Objects.Actions.Restore(
+		ctx,
+		cmd.Value("action-id").(string),
+		params,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:objects:actions restore",
 		Transform:      transform,
 	})
 }

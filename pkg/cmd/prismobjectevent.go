@@ -14,9 +14,9 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
-	Name:    "execute",
-	Usage:   "Query v2",
+var prismObjectsEventsGet = cli.Command{
+	Name:    "get",
+	Usage:   "Get object",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
@@ -25,10 +25,24 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action", "event".`,
+			Name:      "event-id",
 			Required:  true,
-			PathParam: "objectType",
+			PathParam: "eventId",
+		},
+	},
+	Action:          handlePrismObjectsEventsGet,
+	HideHelpCommand: true,
+}
+
+var prismObjectsEventsQuery = requestflag.WithInnerFlags(cli.Command{
+	Name:    "query",
+	Usage:   "Query v2",
+	Suggest: true,
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
 		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "query",
@@ -52,7 +66,7 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 			BodyPath: "sources",
 		},
 	},
-	Action:          handlePrismQueryExecute,
+	Action:          handlePrismObjectsEventsQuery,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"query": {
@@ -91,11 +105,11 @@ var prismQueryExecute = requestflag.WithInnerFlags(cli.Command{
 	},
 })
 
-func handlePrismQueryExecute(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsEventsGet(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
+	if !cmd.IsSet("event-id") && len(unusedArgs) > 0 {
+		cmd.Set("event-id", unusedArgs[0])
 		unusedArgs = unusedArgs[1:]
 	}
 	if len(unusedArgs) > 0 {
@@ -106,22 +120,22 @@ func handlePrismQueryExecute(ctx context.Context, cmd *cli.Command) error {
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
-		ApplicationJSON,
+		EmptyBody,
 		false,
 	)
 	if err != nil {
 		return err
 	}
 
-	params := micro.PrismQueryExecuteParams{
+	params := micro.PrismObjectEventGetParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.Query.Execute(
+	_, err = client.Prism.Objects.Events.Get(
 		ctx,
-		micro.PrismQueryExecuteParamsObjectType(cmd.Value("object-type").(string)),
+		cmd.Value("event-id").(string),
 		params,
 		options...,
 	)
@@ -137,7 +151,50 @@ func handlePrismQueryExecute(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism:query execute",
+		Title:          "prism:objects:events get",
+		Transform:      transform,
+	})
+}
+
+func handlePrismObjectsEventsQuery(ctx context.Context, cmd *cli.Command) error {
+	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	params := micro.PrismObjectEventQueryParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Objects.Events.Query(ctx, params, options...)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:objects:events query",
 		Transform:      transform,
 	})
 }

@@ -14,34 +14,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var prismGrantRetrieveGrant = cli.Command{
-	Name:    "retrieve-grant",
-	Usage:   "Get grant",
-	Suggest: true,
-	Flags: []cli.Flag{
-		&requestflag.Flag[string]{
-			Name:      "team-id",
-			Required:  true,
-			PathParam: "teamId",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
-			Required:  true,
-			PathParam: "objectType",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-id",
-			Required:  true,
-			PathParam: "objectId",
-		},
-	},
-	Action:          handlePrismGrantRetrieveGrant,
-	HideHelpCommand: true,
-}
-
-var prismGrantUpdateGrant = cli.Command{
-	Name:    "update-grant",
+var prismObjectsDealsGrantUpdate = cli.Command{
+	Name:    "update",
 	Usage:   "Update grant",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -51,15 +25,9 @@ var prismGrantUpdateGrant = cli.Command{
 			PathParam: "teamId",
 		},
 		&requestflag.Flag[string]{
-			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Name:      "deal-id",
 			Required:  true,
-			PathParam: "objectType",
-		},
-		&requestflag.Flag[string]{
-			Name:      "object-id",
-			Required:  true,
-			PathParam: "objectId",
+			PathParam: "dealId",
 		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "team-group-id",
@@ -74,75 +42,35 @@ var prismGrantUpdateGrant = cli.Command{
 			BodyPath: "user_id",
 		},
 	},
-	Action:          handlePrismGrantUpdateGrant,
+	Action:          handlePrismObjectsDealsGrantUpdate,
 	HideHelpCommand: true,
 }
 
-func handlePrismGrantRetrieveGrant(ctx context.Context, cmd *cli.Command) error {
-	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
-	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if !cmd.IsSet("object-id") && len(unusedArgs) > 0 {
-		cmd.Set("object-id", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	options, err := flagOptions(
-		cmd,
-		apiquery.NestedQueryFormatBrackets,
-		apiquery.ArrayQueryFormatComma,
-		EmptyBody,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-
-	params := micro.PrismGrantGetGrantParams{
-		TeamID: micro.F(cmd.Value("team-id").(string)),
-	}
-
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.Grant.GetGrant(
-		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
-		cmd.Value("object-id").(string),
-		params,
-		options...,
-	)
-	if err != nil {
-		return err
-	}
-
-	obj := gjson.ParseBytes(res)
-	format := cmd.Root().String("format")
-	explicitFormat := cmd.Root().IsSet("format")
-	transform := cmd.Root().String("transform")
-	return ShowJSON(obj, ShowJSONOpts{
-		ExplicitFormat: explicitFormat,
-		Format:         format,
-		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism:grant retrieve-grant",
-		Transform:      transform,
-	})
+var prismObjectsDealsGrantGet = cli.Command{
+	Name:    "get",
+	Usage:   "Get grant",
+	Suggest: true,
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name:      "team-id",
+			Required:  true,
+			PathParam: "teamId",
+		},
+		&requestflag.Flag[string]{
+			Name:      "deal-id",
+			Required:  true,
+			PathParam: "dealId",
+		},
+	},
+	Action:          handlePrismObjectsDealsGrantGet,
+	HideHelpCommand: true,
 }
 
-func handlePrismGrantUpdateGrant(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsDealsGrantUpdate(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("object-type") && len(unusedArgs) > 0 {
-		cmd.Set("object-type", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if !cmd.IsSet("object-id") && len(unusedArgs) > 0 {
-		cmd.Set("object-id", unusedArgs[0])
+	if !cmd.IsSet("deal-id") && len(unusedArgs) > 0 {
+		cmd.Set("deal-id", unusedArgs[0])
 		unusedArgs = unusedArgs[1:]
 	}
 	if len(unusedArgs) > 0 {
@@ -160,16 +88,15 @@ func handlePrismGrantUpdateGrant(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	params := micro.PrismGrantUpdateGrantParams{
+	params := micro.PrismObjectDealGrantUpdateParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Prism.Grant.UpdateGrant(
+	_, err = client.Prism.Objects.Deals.Grant.Update(
 		ctx,
-		micro.ObjectType(cmd.Value("object-type").(string)),
-		cmd.Value("object-id").(string),
+		cmd.Value("deal-id").(string),
 		params,
 		options...,
 	)
@@ -185,7 +112,58 @@ func handlePrismGrantUpdateGrant(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "prism:grant update-grant",
+		Title:          "prism:objects:deals:grant update",
+		Transform:      transform,
+	})
+}
+
+func handlePrismObjectsDealsGrantGet(ctx context.Context, cmd *cli.Command) error {
+	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("deal-id") && len(unusedArgs) > 0 {
+		cmd.Set("deal-id", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		EmptyBody,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	params := micro.PrismObjectDealGrantGetParams{
+		TeamID: micro.F(cmd.Value("team-id").(string)),
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Prism.Objects.Deals.Grant.Get(
+		ctx,
+		cmd.Value("deal-id").(string),
+		params,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "prism:objects:deals:grant get",
 		Transform:      transform,
 	})
 }

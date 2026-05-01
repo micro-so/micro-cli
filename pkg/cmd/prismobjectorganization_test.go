@@ -9,16 +9,15 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 )
 
-func TestPrismQueryExecute(t *testing.T) {
+func TestPrismObjectsOrganizationsQuery(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"prism:query", "execute",
+			"prism:objects:organizations", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object-type", "deal",
 			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--box", "string",
@@ -29,16 +28,15 @@ func TestPrismQueryExecute(t *testing.T) {
 
 	t.Run("inner flags", func(t *testing.T) {
 		// Check that inner flags have been set up correctly
-		requestflag.CheckInnerFlags(prismQueryExecute)
+		requestflag.CheckInnerFlags(prismObjectsOrganizationsQuery)
 
 		// Alternative argument passing style using inner flags
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"prism:query", "execute",
+			"prism:objects:organizations", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object-type", "deal",
 			"--query.select", "[string]",
 			"--query.combinator", "AND",
 			"--query.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -78,9 +76,8 @@ func TestPrismQueryExecute(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"prism:query", "execute",
+			"prism:objects:organizations", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object-type", "deal",
 		)
 	})
 }
