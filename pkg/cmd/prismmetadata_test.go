@@ -8,14 +8,14 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/mocktest"
 )
 
-func TestPrismMetadataProperties(t *testing.T) {
+func TestPrismMetadataList(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"prism:metadata", "properties",
+			"prism:metadata", "list",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--object-type", "deal",
 			"--autofill=true",

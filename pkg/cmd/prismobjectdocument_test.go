@@ -9,14 +9,14 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 )
 
-func TestActionsCreate(t *testing.T) {
+func TestPrismObjectsDocumentsCreate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "create",
+			"prism:objects:documents", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
@@ -37,22 +37,22 @@ func TestActionsCreate(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "create",
+			"prism:objects:documents", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestActionsUpdate(t *testing.T) {
+func TestPrismObjectsDocumentsUpdate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "update",
+			"prism:objects:documents", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--action-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--document-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
 			"--default", "{foo: bar}",
@@ -72,21 +72,121 @@ func TestActionsUpdate(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "update",
+			"prism:objects:documents", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--action-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--document-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestActionsList(t *testing.T) {
+func TestPrismObjectsDocumentsDelete(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "list",
+			"prism:objects:documents", "delete",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--document-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDocumentsBulkCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:documents", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
+			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
+		)
+	})
+
+	t.Run("inner flags", func(t *testing.T) {
+		// Check that inner flags have been set up correctly
+		requestflag.CheckInnerFlags(prismObjectsDocumentsBulkCreate)
+
+		// Alternative argument passing style using inner flags
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:documents", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.crm", "{}",
+			"--object.default", "{foo: bar}",
+			"--object.extended", "{}",
+			"--options.case-insensitive=true",
+			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--options.dedupe-by", "dedupe_by",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"objects:\n" +
+			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"    crm: {}\n" +
+			"    default:\n" +
+			"      foo: bar\n" +
+			"    extended: {}\n" +
+			"options:\n" +
+			"  caseInsensitive: true\n" +
+			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"  dedupe_by: dedupe_by\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:documents", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDocumentsDuplicate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:documents", "duplicate",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--document-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDocumentsGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:documents", "get",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--document-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDocumentsQuery(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:documents", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -98,14 +198,14 @@ func TestActionsList(t *testing.T) {
 
 	t.Run("inner flags", func(t *testing.T) {
 		// Check that inner flags have been set up correctly
-		requestflag.CheckInnerFlags(actionsList)
+		requestflag.CheckInnerFlags(prismObjectsDocumentsQuery)
 
 		// Alternative argument passing style using inner flags
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "list",
+			"prism:objects:documents", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.select", "[string]",
 			"--query.combinator", "AND",
@@ -146,22 +246,22 @@ func TestActionsList(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "list",
+			"prism:objects:documents", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestActionsDelete(t *testing.T) {
+func TestPrismObjectsDocumentsRestore(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"actions", "delete",
+			"prism:objects:documents", "restore",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--action-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--document-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }

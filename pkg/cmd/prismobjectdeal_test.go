@@ -9,14 +9,14 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 )
 
-func TestDealsCreate(t *testing.T) {
+func TestPrismObjectsDealsCreate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "create",
+			"prism:objects:deals", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
@@ -37,20 +37,20 @@ func TestDealsCreate(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "create",
+			"prism:objects:deals", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestDealsUpdate(t *testing.T) {
+func TestPrismObjectsDealsUpdate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "update",
+			"prism:objects:deals", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--deal-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -72,21 +72,121 @@ func TestDealsUpdate(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "update",
+			"prism:objects:deals", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--deal-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestDealsList(t *testing.T) {
+func TestPrismObjectsDealsDelete(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "list",
+			"prism:objects:deals", "delete",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--deal-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDealsBulkCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:deals", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
+			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
+		)
+	})
+
+	t.Run("inner flags", func(t *testing.T) {
+		// Check that inner flags have been set up correctly
+		requestflag.CheckInnerFlags(prismObjectsDealsBulkCreate)
+
+		// Alternative argument passing style using inner flags
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:deals", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.crm", "{}",
+			"--object.default", "{foo: bar}",
+			"--object.extended", "{}",
+			"--options.case-insensitive=true",
+			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--options.dedupe-by", "dedupe_by",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"objects:\n" +
+			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"    crm: {}\n" +
+			"    default:\n" +
+			"      foo: bar\n" +
+			"    extended: {}\n" +
+			"options:\n" +
+			"  caseInsensitive: true\n" +
+			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"  dedupe_by: dedupe_by\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:deals", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDealsDuplicate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:deals", "duplicate",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--deal-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDealsGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:deals", "get",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--deal-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsDealsQuery(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:deals", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -98,14 +198,14 @@ func TestDealsList(t *testing.T) {
 
 	t.Run("inner flags", func(t *testing.T) {
 		// Check that inner flags have been set up correctly
-		requestflag.CheckInnerFlags(dealsList)
+		requestflag.CheckInnerFlags(prismObjectsDealsQuery)
 
 		// Alternative argument passing style using inner flags
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "list",
+			"prism:objects:deals", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.select", "[string]",
 			"--query.combinator", "AND",
@@ -146,80 +246,22 @@ func TestDealsList(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "list",
+			"prism:objects:deals", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestDealsDelete(t *testing.T) {
+func TestPrismObjectsDealsRestore(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"deals", "delete",
+			"prism:objects:deals", "restore",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--deal-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-		)
-	})
-}
-
-func TestDealsImport(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	t.Run("regular flags", func(t *testing.T) {
-		mocktest.TestRunMockTestWithFlags(
-			t,
-			"--api-key", "string",
-			"--team-id", "string",
-			"deals", "import",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
-			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
-		)
-	})
-
-	t.Run("inner flags", func(t *testing.T) {
-		// Check that inner flags have been set up correctly
-		requestflag.CheckInnerFlags(dealsImport)
-
-		// Alternative argument passing style using inner flags
-		mocktest.TestRunMockTestWithFlags(
-			t,
-			"--api-key", "string",
-			"--team-id", "string",
-			"deals", "import",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object.crm", "{}",
-			"--object.default", "{foo: bar}",
-			"--object.extended", "{}",
-			"--options.case-insensitive=true",
-			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--options.dedupe-by", "dedupe_by",
-		)
-	})
-
-	t.Run("piping data", func(t *testing.T) {
-		// Test piping YAML data over stdin
-		pipeData := []byte("" +
-			"objects:\n" +
-			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"    crm: {}\n" +
-			"    default:\n" +
-			"      foo: bar\n" +
-			"    extended: {}\n" +
-			"options:\n" +
-			"  caseInsensitive: true\n" +
-			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"  dedupe_by: dedupe_by\n")
-		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData,
-			"--api-key", "string",
-			"--team-id", "string",
-			"deals", "import",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }

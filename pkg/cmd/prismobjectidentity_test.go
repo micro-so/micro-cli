@@ -9,14 +9,14 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 )
 
-func TestIdentitiesCreate(t *testing.T) {
+func TestPrismObjectsIdentitiesCreate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "create",
+			"prism:objects:identities", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--crm", "{}",
@@ -37,20 +37,20 @@ func TestIdentitiesCreate(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "create",
+			"prism:objects:identities", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestIdentitiesUpdate(t *testing.T) {
+func TestPrismObjectsIdentitiesUpdate(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "update",
+			"prism:objects:identities", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -72,21 +72,121 @@ func TestIdentitiesUpdate(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "update",
+			"prism:objects:identities", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestIdentitiesList(t *testing.T) {
+func TestPrismObjectsIdentitiesDelete(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "list",
+			"prism:objects:identities", "delete",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsIdentitiesBulkCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
+			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
+		)
+	})
+
+	t.Run("inner flags", func(t *testing.T) {
+		// Check that inner flags have been set up correctly
+		requestflag.CheckInnerFlags(prismObjectsIdentitiesBulkCreate)
+
+		// Alternative argument passing style using inner flags
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.crm", "{}",
+			"--object.default", "{foo: bar}",
+			"--object.extended", "{}",
+			"--options.case-insensitive=true",
+			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--options.dedupe-by", "dedupe_by",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"objects:\n" +
+			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"    crm: {}\n" +
+			"    default:\n" +
+			"      foo: bar\n" +
+			"    extended: {}\n" +
+			"options:\n" +
+			"  caseInsensitive: true\n" +
+			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"  dedupe_by: dedupe_by\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsIdentitiesDuplicate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities", "duplicate",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsIdentitiesGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities", "get",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsIdentitiesQuery(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:identities", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -98,14 +198,14 @@ func TestIdentitiesList(t *testing.T) {
 
 	t.Run("inner flags", func(t *testing.T) {
 		// Check that inner flags have been set up correctly
-		requestflag.CheckInnerFlags(identitiesList)
+		requestflag.CheckInnerFlags(prismObjectsIdentitiesQuery)
 
 		// Alternative argument passing style using inner flags
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "list",
+			"prism:objects:identities", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.select", "[string]",
 			"--query.combinator", "AND",
@@ -146,80 +246,22 @@ func TestIdentitiesList(t *testing.T) {
 			t, pipeData,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "list",
+			"prism:objects:identities", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }
 
-func TestIdentitiesDelete(t *testing.T) {
+func TestPrismObjectsIdentitiesRestore(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
 			t,
 			"--api-key", "string",
 			"--team-id", "string",
-			"identities", "delete",
+			"prism:objects:identities", "restore",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--identity-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-		)
-	})
-}
-
-func TestIdentitiesImport(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	t.Run("regular flags", func(t *testing.T) {
-		mocktest.TestRunMockTestWithFlags(
-			t,
-			"--api-key", "string",
-			"--team-id", "string",
-			"identities", "import",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
-			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
-		)
-	})
-
-	t.Run("inner flags", func(t *testing.T) {
-		// Check that inner flags have been set up correctly
-		requestflag.CheckInnerFlags(identitiesImport)
-
-		// Alternative argument passing style using inner flags
-		mocktest.TestRunMockTestWithFlags(
-			t,
-			"--api-key", "string",
-			"--team-id", "string",
-			"identities", "import",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object.crm", "{}",
-			"--object.default", "{foo: bar}",
-			"--object.extended", "{}",
-			"--options.case-insensitive=true",
-			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--options.dedupe-by", "dedupe_by",
-		)
-	})
-
-	t.Run("piping data", func(t *testing.T) {
-		// Test piping YAML data over stdin
-		pipeData := []byte("" +
-			"objects:\n" +
-			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"    crm: {}\n" +
-			"    default:\n" +
-			"      foo: bar\n" +
-			"    extended: {}\n" +
-			"options:\n" +
-			"  caseInsensitive: true\n" +
-			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"  dedupe_by: dedupe_by\n")
-		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData,
-			"--api-key", "string",
-			"--team-id", "string",
-			"identities", "import",
-			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }

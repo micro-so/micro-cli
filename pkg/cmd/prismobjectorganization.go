@@ -14,8 +14,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var eventsList = requestflag.WithInnerFlags(cli.Command{
-	Name:    "list",
+var prismObjectsOrganizationsQuery = requestflag.WithInnerFlags(cli.Command{
+	Name:    "query",
 	Usage:   "Query v2",
 	Suggest: true,
 	Flags: []cli.Flag{
@@ -46,7 +46,7 @@ var eventsList = requestflag.WithInnerFlags(cli.Command{
 			BodyPath: "sources",
 		},
 	},
-	Action:          handleEventsList,
+	Action:          handlePrismObjectsOrganizationsQuery,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"query": {
@@ -85,7 +85,7 @@ var eventsList = requestflag.WithInnerFlags(cli.Command{
 	},
 })
 
-func handleEventsList(ctx context.Context, cmd *cli.Command) error {
+func handlePrismObjectsOrganizationsQuery(ctx context.Context, cmd *cli.Command) error {
 	client := micro.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 
@@ -104,13 +104,13 @@ func handleEventsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	params := micro.EventListParams{
+	params := micro.PrismObjectOrganizationQueryParams{
 		TeamID: micro.F(cmd.Value("team-id").(string)),
 	}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Events.List(ctx, params, options...)
+	_, err = client.Prism.Objects.Organizations.Query(ctx, params, options...)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func handleEventsList(ctx context.Context, cmd *cli.Command) error {
 		ExplicitFormat: explicitFormat,
 		Format:         format,
 		RawOutput:      cmd.Root().Bool("raw-output"),
-		Title:          "events list",
+		Title:          "prism:objects:organizations query",
 		Transform:      transform,
 	})
 }
