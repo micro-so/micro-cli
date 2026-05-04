@@ -5,7 +5,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/stainless-sdks/micro-cli/internal/mocktest"
+	"github.com/micro-so/micro-cli/internal/mocktest"
 )
 
 func TestPrismObjectsActionsGrantUpdate(t *testing.T) {

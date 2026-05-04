@@ -1,4 +1,4 @@
-module github.com/stainless-sdks/micro-cli
+module github.com/micro-so/micro-cli
 
 go 1.25
 

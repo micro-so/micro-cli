@@ -10,8 +10,8 @@ import (
 	"os"
 	"slices"
 
+	"github.com/micro-so/micro-cli/pkg/cmd"
 	"github.com/micro-so/micro-sdk-go"
-	"github.com/stainless-sdks/micro-cli/pkg/cmd"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
