@@ -12,8 +12,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/micro-so/micro-cli/internal/autocomplete"
-	"github.com/micro-so/micro-cli/internal/requestflag"
+	"github.com/stainless-sdks/micro-cli/internal/autocomplete"
+	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )

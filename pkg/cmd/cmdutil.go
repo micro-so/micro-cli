@@ -16,8 +16,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/micro-so/micro-cli/internal/jsonview"
-	"github.com/micro-so/micro-sdk-go/option"
+	"github.com/stainless-sdks/micro-cli/internal/jsonview"
+	"github.com/stainless-sdks/micro-go/option"
 
 	"github.com/charmbracelet/x/term"
 	"github.com/itchyny/json2yaml"
