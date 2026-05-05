@@ -5,7 +5,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/micro-so/micro-cli/internal/mocktest"
+	"github.com/stainless-sdks/micro-cli/internal/mocktest"
 )
 
 func TestViewsRecordsList(t *testing.T) {

@@ -5,8 +5,8 @@ package cmd
 import (
 	"testing"
 
-	"github.com/micro-so/micro-cli/internal/mocktest"
-	"github.com/micro-so/micro-cli/internal/requestflag"
+	"github.com/stainless-sdks/micro-cli/internal/mocktest"
+	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 )
 
 func TestPrismObjectsEventsGet(t *testing.T) {

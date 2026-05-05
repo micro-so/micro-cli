@@ -15,7 +15,7 @@ on:
       - 'stl-preview-base/**'
 
 env:
-  GOPRIVATE: github.com/micro-so/micro-sdk-go,github.com/stainless-sdks/micro-go
+  GOPRIVATE: github.com/stainless-sdks/micro-go
 
 jobs:
   lint:
