@@ -100,6 +100,8 @@ func init() {
 				Category: "API RESOURCE",
 				Suggest:  true,
 				Commands: []*cli.Command{
+					&prismObjectsContactsCreate,
+					&prismObjectsContactsBulkCreate,
 					&prismObjectsContactsQuery,
 				},
 			},
@@ -108,6 +110,8 @@ func init() {
 				Category: "API RESOURCE",
 				Suggest:  true,
 				Commands: []*cli.Command{
+					&prismObjectsOrganizationsCreate,
+					&prismObjectsOrganizationsBulkCreate,
 					&prismObjectsOrganizationsQuery,
 				},
 			},

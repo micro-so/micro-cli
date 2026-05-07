@@ -26,7 +26,7 @@ var prismMetadataList = cli.Command{
 		},
 		&requestflag.Flag[string]{
 			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact".`,
 			Required:  true,
 			PathParam: "objectType",
 		},
