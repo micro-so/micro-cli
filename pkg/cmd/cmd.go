@@ -131,15 +131,6 @@ func init() {
 				},
 			},
 			{
-				Name:     "prism:objects:identities:grant",
-				Category: "API RESOURCE",
-				Suggest:  true,
-				Commands: []*cli.Command{
-					&prismObjectsIdentitiesGrantUpdate,
-					&prismObjectsIdentitiesGrantGet,
-				},
-			},
-			{
 				Name:     "prism:objects:deals",
 				Category: "API RESOURCE",
 				Suggest:  true,
