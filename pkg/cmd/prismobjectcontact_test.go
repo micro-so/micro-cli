@@ -9,6 +9,98 @@ import (
 	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 )
 
+func TestPrismObjectsContactsCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:contacts", "create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--crm", "{}",
+			"--default", "{foo: bar}",
+			"--extended", "{}",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"crm: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
+			"extended: {}\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:contacts", "create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsContactsBulkCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:contacts", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
+			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
+		)
+	})
+
+	t.Run("inner flags", func(t *testing.T) {
+		// Check that inner flags have been set up correctly
+		requestflag.CheckInnerFlags(prismObjectsContactsBulkCreate)
+
+		// Alternative argument passing style using inner flags
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:contacts", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.crm", "{}",
+			"--object.default", "{foo: bar}",
+			"--object.extended", "{}",
+			"--options.case-insensitive=true",
+			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--options.dedupe-by", "dedupe_by",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"objects:\n" +
+			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"    crm: {}\n" +
+			"    default:\n" +
+			"      foo: bar\n" +
+			"    extended: {}\n" +
+			"options:\n" +
+			"  caseInsensitive: true\n" +
+			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"  dedupe_by: dedupe_by\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:contacts", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
 func TestPrismObjectsContactsQuery(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	t.Run("regular flags", func(t *testing.T) {

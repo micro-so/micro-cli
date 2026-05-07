@@ -34,7 +34,7 @@ var prismObjectsIdentitiesCreate = cli.Command{
 		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "default",
-			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null. For select/multiselect properties, values may be option slugs or option UUIDs on write; option slugs are returned on read.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
@@ -71,7 +71,7 @@ var prismObjectsIdentitiesUpdate = cli.Command{
 		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "default",
-			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
+			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null. For select/multiselect properties, values may be option slugs or option UUIDs on write; option slugs are returned on read.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
@@ -138,7 +138,7 @@ var prismObjectsIdentitiesBulkCreate = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[map[string]any]{
 			Name:       "object.default",
-			Usage:      "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null.",
+			Usage:      "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null. For select/multiselect properties, values may be option slugs or option UUIDs on write; option slugs are returned on read.",
 			InnerField: "default",
 		},
 		&requestflag.InnerFlag[any]{
@@ -257,7 +257,7 @@ var prismObjectsIdentitiesQuery = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
-			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values must be option slugs",
+			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values may be option slugs or option UUIDs.",
 			InnerField: "filter",
 		},
 		&requestflag.InnerFlag[int64]{
