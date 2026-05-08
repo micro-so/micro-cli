@@ -207,7 +207,7 @@ var prismObjectsDealsGet = cli.Command{
 
 var prismObjectsDealsQuery = requestflag.WithInnerFlags(cli.Command{
 	Name:    "query",
-	Usage:   "Query v2",
+	Usage:   "Query",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
