@@ -101,8 +101,13 @@ func init() {
 				Suggest:  true,
 				Commands: []*cli.Command{
 					&prismObjectsContactsCreate,
+					&prismObjectsContactsUpdate,
+					&prismObjectsContactsDelete,
 					&prismObjectsContactsBulkCreate,
+					&prismObjectsContactsDuplicate,
+					&prismObjectsContactsGet,
 					&prismObjectsContactsQuery,
+					&prismObjectsContactsRestore,
 				},
 			},
 			{
@@ -111,8 +116,13 @@ func init() {
 				Suggest:  true,
 				Commands: []*cli.Command{
 					&prismObjectsOrganizationsCreate,
+					&prismObjectsOrganizationsUpdate,
+					&prismObjectsOrganizationsDelete,
 					&prismObjectsOrganizationsBulkCreate,
+					&prismObjectsOrganizationsDuplicate,
+					&prismObjectsOrganizationsGet,
 					&prismObjectsOrganizationsQuery,
+					&prismObjectsOrganizationsRestore,
 				},
 			},
 			{
