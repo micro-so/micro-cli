@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-sdks/micro-cli/internal/apiquery"
-	"github.com/stainless-sdks/micro-cli/internal/requestflag"
-	"github.com/stainless-sdks/micro-go"
-	"github.com/stainless-sdks/micro-go/option"
+	"github.com/micro-so/micro-cli/internal/apiquery"
+	"github.com/micro-so/micro-cli/internal/requestflag"
+	"github.com/micro-so/micro-sdk-go"
+	"github.com/micro-so/micro-sdk-go/option"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
