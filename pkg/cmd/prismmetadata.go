@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/micro-so/micro-cli/internal/apiquery"
+	"github.com/micro-so/micro-cli/internal/requestflag"
 	"github.com/micro-so/micro-sdk-go"
 	"github.com/micro-so/micro-sdk-go/option"
-	"github.com/stainless-sdks/micro-cli/internal/apiquery"
-	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -26,7 +26,7 @@ var prismMetadataList = cli.Command{
 		},
 		&requestflag.Flag[string]{
 			Name:      "object-type",
-			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event".`,
+			Usage:     `Allowed values: "deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact".`,
 			Required:  true,
 			PathParam: "objectType",
 		},

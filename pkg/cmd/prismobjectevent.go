@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/micro-so/micro-cli/internal/apiquery"
+	"github.com/micro-so/micro-cli/internal/requestflag"
 	"github.com/micro-so/micro-sdk-go"
 	"github.com/micro-so/micro-sdk-go/option"
-	"github.com/stainless-sdks/micro-cli/internal/apiquery"
-	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -36,7 +36,7 @@ var prismObjectsEventsGet = cli.Command{
 
 var prismObjectsEventsQuery = requestflag.WithInnerFlags(cli.Command{
 	Name:    "query",
-	Usage:   "Query v2",
+	Usage:   "Query",
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
@@ -86,7 +86,7 @@ var prismObjectsEventsQuery = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
-			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values must be option slugs",
+			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values may be option slugs or option UUIDs.",
 			InnerField: "filter",
 		},
 		&requestflag.InnerFlag[int64]{

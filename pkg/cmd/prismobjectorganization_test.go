@@ -5,9 +5,179 @@ package cmd
 import (
 	"testing"
 
-	"github.com/stainless-sdks/micro-cli/internal/mocktest"
-	"github.com/stainless-sdks/micro-cli/internal/requestflag"
+	"github.com/micro-so/micro-cli/internal/mocktest"
+	"github.com/micro-so/micro-cli/internal/requestflag"
 )
+
+func TestPrismObjectsOrganizationsCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--crm", "{}",
+			"--default", "{foo: bar}",
+			"--extended", "{}",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"crm: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
+			"extended: {}\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsOrganizationsUpdate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "update",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--organization-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--crm", "{}",
+			"--default", "{foo: bar}",
+			"--extended", "{}",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"crm: {}\n" +
+			"default:\n" +
+			"  foo: bar\n" +
+			"extended: {}\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "update",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--organization-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsOrganizationsDelete(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "delete",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--organization-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsOrganizationsBulkCreate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
+			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
+		)
+	})
+
+	t.Run("inner flags", func(t *testing.T) {
+		// Check that inner flags have been set up correctly
+		requestflag.CheckInnerFlags(prismObjectsOrganizationsBulkCreate)
+
+		// Alternative argument passing style using inner flags
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--object.crm", "{}",
+			"--object.default", "{foo: bar}",
+			"--object.extended", "{}",
+			"--options.case-insensitive=true",
+			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--options.dedupe-by", "dedupe_by",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"objects:\n" +
+			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"    crm: {}\n" +
+			"    default:\n" +
+			"      foo: bar\n" +
+			"    extended: {}\n" +
+			"options:\n" +
+			"  caseInsensitive: true\n" +
+			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
+			"  dedupe_by: dedupe_by\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "bulk-create",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsOrganizationsDuplicate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "duplicate",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--organization-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsOrganizationsGet(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "get",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--organization-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
 
 func TestPrismObjectsOrganizationsQuery(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
@@ -78,6 +248,20 @@ func TestPrismObjectsOrganizationsQuery(t *testing.T) {
 			"--team-id", "string",
 			"prism:objects:organizations", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+		)
+	})
+}
+
+func TestPrismObjectsOrganizationsRestore(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t,
+			"--api-key", "string",
+			"--team-id", "string",
+			"prism:objects:organizations", "restore",
+			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--organization-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 }

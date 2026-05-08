@@ -12,8 +12,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/stainless-sdks/micro-cli/internal/autocomplete"
-	"github.com/stainless-sdks/micro-cli/internal/requestflag"
+	"github.com/micro-so/micro-cli/internal/autocomplete"
+	"github.com/micro-so/micro-cli/internal/requestflag"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
@@ -85,6 +85,10 @@ func init() {
 			&requestflag.Flag[string]{
 				Name: "team-id",
 			},
+			&cli.StringFlag{
+				Name:  "environment",
+				Usage: "Set the environment for API requests",
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -100,7 +104,14 @@ func init() {
 				Category: "API RESOURCE",
 				Suggest:  true,
 				Commands: []*cli.Command{
+					&prismObjectsContactsCreate,
+					&prismObjectsContactsUpdate,
+					&prismObjectsContactsDelete,
+					&prismObjectsContactsBulkCreate,
+					&prismObjectsContactsDuplicate,
+					&prismObjectsContactsGet,
 					&prismObjectsContactsQuery,
+					&prismObjectsContactsRestore,
 				},
 			},
 			{
@@ -108,7 +119,14 @@ func init() {
 				Category: "API RESOURCE",
 				Suggest:  true,
 				Commands: []*cli.Command{
+					&prismObjectsOrganizationsCreate,
+					&prismObjectsOrganizationsUpdate,
+					&prismObjectsOrganizationsDelete,
+					&prismObjectsOrganizationsBulkCreate,
+					&prismObjectsOrganizationsDuplicate,
+					&prismObjectsOrganizationsGet,
 					&prismObjectsOrganizationsQuery,
+					&prismObjectsOrganizationsRestore,
 				},
 			},
 			{
@@ -124,15 +142,6 @@ func init() {
 					&prismObjectsIdentitiesGet,
 					&prismObjectsIdentitiesQuery,
 					&prismObjectsIdentitiesRestore,
-				},
-			},
-			{
-				Name:     "prism:objects:identities:grant",
-				Category: "API RESOURCE",
-				Suggest:  true,
-				Commands: []*cli.Command{
-					&prismObjectsIdentitiesGrantUpdate,
-					&prismObjectsIdentitiesGrantGet,
 				},
 			},
 			{

@@ -16,11 +16,11 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/micro-so/micro-cli/internal/apiform"
+	"github.com/micro-so/micro-cli/internal/apiquery"
+	"github.com/micro-so/micro-cli/internal/debugmiddleware"
+	"github.com/micro-so/micro-cli/internal/requestflag"
 	"github.com/micro-so/micro-sdk-go/option"
-	"github.com/stainless-sdks/micro-cli/internal/apiform"
-	"github.com/stainless-sdks/micro-cli/internal/apiquery"
-	"github.com/stainless-sdks/micro-cli/internal/debugmiddleware"
-	"github.com/stainless-sdks/micro-cli/internal/requestflag"
 
 	"github.com/goccy/go-yaml"
 	"github.com/urfave/cli/v3"
