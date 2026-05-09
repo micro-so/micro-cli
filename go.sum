@@ -37,8 +37,8 @@ github.com/mattn/go-localereader v0.0.1/go.mod h1:8fBrzywKY7BI3czFoHkuzRoWE9C+Ei
 github.com/mattn/go-runewidth v0.0.12/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRCM46jaSJTDAk=
 github.com/mattn/go-runewidth v0.0.16 h1:E5ScNMtiwvlvB5paMFdw9p4kSQzbXFikJ5SQO6TULQc=
 github.com/mattn/go-runewidth v0.0.16/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
-github.com/micro-so/micro-sdk-go v0.1.0 h1:v4aA/9YLG3YcT1gPIz8hWN6pnJ/PsoBvueQiAnK0qKQ=
-github.com/micro-so/micro-sdk-go v0.1.0/go.mod h1:7pFYXUfH53VhhQTane7+EHAIhNuLOF8b4vOheJlHRas=
+github.com/micro-so/micro-sdk-go v0.2.0 h1:Q4MVhDA6xltlWwm0U0yBcf1oZaji68J8n5wAMVPIGJI=
+github.com/micro-so/micro-sdk-go v0.2.0/go.mod h1:7pFYXUfH53VhhQTane7+EHAIhNuLOF8b4vOheJlHRas=
 github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 h1:ZK8zHtRHOkbHy6Mmr5D264iyp3TiX5OmNcI5cIARiQI=
 github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6/go.mod h1:CJlz5H+gyd6CUWT45Oy4q24RdLyn7Md9Vj2/ldJBSIo=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=
