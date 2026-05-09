@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 (2026-05-09)
+
+Full Changelog: [v0.1.0...v0.1.1](https://github.com/micro-so/micro-cli/compare/v0.1.0...v0.1.1)
+
+### Chores
+
+* update SDK settings ([1e98c3f](https://github.com/micro-so/micro-cli/commit/1e98c3febea184cc0e3e22dde928177c884578e5))
+
 ## 0.1.0 (2026-05-08)
 
 Full Changelog: [v0.0.1...v0.1.0](https://github.com/micro-so/micro-cli/compare/v0.0.1...v0.1.0)
