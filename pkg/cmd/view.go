@@ -65,10 +65,6 @@ var viewsCreate = cli.Command{
 			Name:     "created-at",
 			BodyPath: "created_at",
 		},
-		&requestflag.Flag[*string]{
-			Name:     "crm-id",
-			BodyPath: "crm_id",
-		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "filter",
 			Usage:    "Each entry is { slug: { comparator: value } }",
@@ -94,6 +90,10 @@ var viewsCreate = cli.Command{
 		&requestflag.Flag[*string]{
 			Name:     "icon",
 			BodyPath: "icon",
+		},
+		&requestflag.Flag[*string]{
+			Name:     "list-id",
+			BodyPath: "list_id",
 		},
 		&requestflag.Flag[[]string]{
 			Name:     "select",
@@ -164,10 +164,6 @@ var viewsUpdate = cli.Command{
 			Usage:    `Allowed values: "AND", "OR".`,
 			BodyPath: "combinator",
 		},
-		&requestflag.Flag[*string]{
-			Name:     "crm-id",
-			BodyPath: "crm_id",
-		},
 		&requestflag.Flag[[]map[string]any]{
 			Name:     "filter",
 			BodyPath: "filter",
@@ -191,6 +187,10 @@ var viewsUpdate = cli.Command{
 		&requestflag.Flag[*string]{
 			Name:     "icon",
 			BodyPath: "icon",
+		},
+		&requestflag.Flag[*string]{
+			Name:     "list-id",
+			BodyPath: "list_id",
 		},
 		&requestflag.Flag[string]{
 			Name:     "name",
