@@ -35,8 +35,8 @@ var prismMetadataList = cli.Command{
 			QueryPath: "autofill",
 		},
 		&requestflag.Flag[string]{
-			Name:      "crm-id",
-			QueryPath: "crmId",
+			Name:      "list-id",
+			QueryPath: "listId",
 		},
 		&requestflag.Flag[string]{
 			Name:      "term",

@@ -32,7 +32,7 @@ func TestPrismObjectsEventsQuery(t *testing.T) {
 			"--team-id", "string",
 			"prism:objects:events", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
+			"--query", "{select: [string], combinator: AND, filter: [{foo: {'=': string}}], limit: 1, list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--box", "string",
 			"--deleted=true",
@@ -53,9 +53,9 @@ func TestPrismObjectsEventsQuery(t *testing.T) {
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.select", "[string]",
 			"--query.combinator", "AND",
-			"--query.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--query.filter", "[{foo: {foo: string}}]",
+			"--query.filter", "[{foo: {'=': string}}]",
 			"--query.limit", "1",
+			"--query.list-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.page", "0",
 			"--query.sort", "[{foo: asc}]",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -72,11 +72,11 @@ func TestPrismObjectsEventsQuery(t *testing.T) {
 			"  select:\n" +
 			"    - string\n" +
 			"  combinator: AND\n" +
-			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"  filter:\n" +
 			"    - foo:\n" +
-			"        foo: string\n" +
+			"        '=': string\n" +
 			"  limit: 1\n" +
+			"  list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"  page: 0\n" +
 			"  sort:\n" +
 			"    - foo: asc\n" +

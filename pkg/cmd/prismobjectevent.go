@@ -80,10 +80,6 @@ var prismObjectsEventsQuery = requestflag.WithInnerFlags(cli.Command{
 			Usage:      "Logical operator for combining filters",
 			InnerField: "combinator",
 		},
-		&requestflag.InnerFlag[string]{
-			Name:       "query.crm-id",
-			InnerField: "crm_id",
-		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
 			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values may be option slugs or option UUIDs.",
@@ -92,6 +88,10 @@ var prismObjectsEventsQuery = requestflag.WithInnerFlags(cli.Command{
 		&requestflag.InnerFlag[int64]{
 			Name:       "query.limit",
 			InnerField: "limit",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "query.list-id",
+			InnerField: "list_id",
 		},
 		&requestflag.InnerFlag[int64]{
 			Name:       "query.page",
