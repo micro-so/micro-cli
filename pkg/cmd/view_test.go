@@ -26,13 +26,13 @@ func TestViewsCreate(t *testing.T) {
 			"--column-layout", "{foo: bar}",
 			"--combinator", "AND",
 			"--created-at", "created_at",
-			"--crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--filter", "{foo: bar}",
 			"--group-by", "group_by",
 			"--group-hidden-option-ids", "[{}]",
 			"--group-hide-empty=true",
 			"--group-sort", "group_sort",
 			"--icon", "icon",
+			"--list-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--select", "string",
 			"--sort", "{foo: bar}",
 			"--sort-order", "0",
@@ -54,7 +54,6 @@ func TestViewsCreate(t *testing.T) {
 			"  foo: bar\n" +
 			"combinator: AND\n" +
 			"created_at: created_at\n" +
-			"crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"filter:\n" +
 			"  - foo: bar\n" +
 			"group_by: group_by\n" +
@@ -63,6 +62,7 @@ func TestViewsCreate(t *testing.T) {
 			"group_hide_empty: true\n" +
 			"group_sort: group_sort\n" +
 			"icon: icon\n" +
+			"list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"select:\n" +
 			"  - string\n" +
 			"sort:\n" +
@@ -97,13 +97,13 @@ func TestViewsUpdate(t *testing.T) {
 			"--aggregation-type", "aggregation_type",
 			"--column-layout", "{foo: bar}",
 			"--combinator", "AND",
-			"--crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--filter", "{foo: bar}",
 			"--group-by", "group_by",
 			"--group-hidden-option-ids", "[{}]",
 			"--group-hide-empty=true",
 			"--group-sort", "group_sort",
 			"--icon", "icon",
+			"--list-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--name", "name",
 			"--select", "string",
 			"--sort", "{foo: bar}",
@@ -122,7 +122,6 @@ func TestViewsUpdate(t *testing.T) {
 			"column_layout:\n" +
 			"  foo: bar\n" +
 			"combinator: AND\n" +
-			"crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"filter:\n" +
 			"  - foo: bar\n" +
 			"group_by: group_by\n" +
@@ -131,6 +130,7 @@ func TestViewsUpdate(t *testing.T) {
 			"group_hide_empty: true\n" +
 			"group_sort: group_sort\n" +
 			"icon: icon\n" +
+			"list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"name: name\n" +
 			"select:\n" +
 			"  - string\n" +

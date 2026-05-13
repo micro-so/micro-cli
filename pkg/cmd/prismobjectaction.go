@@ -24,22 +24,14 @@ var prismObjectsActionsCreate = cli.Command{
 			Required:  true,
 			PathParam: "teamId",
 		},
-		&requestflag.Flag[string]{
-			Name:     "id",
-			BodyPath: "id",
-		},
-		&requestflag.Flag[any]{
-			Name:     "crm",
-			BodyPath: "crm",
-		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "default",
 			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null. For select/multiselect properties, values may be option slugs or option UUIDs on write; option slugs are returned on read.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
-			Name:     "extended",
-			BodyPath: "extended",
+			Name:     "list",
+			BodyPath: "list",
 		},
 	},
 	Action:          handlePrismObjectsActionsCreate,
@@ -61,22 +53,14 @@ var prismObjectsActionsUpdate = cli.Command{
 			Required:  true,
 			PathParam: "actionId",
 		},
-		&requestflag.Flag[string]{
-			Name:     "id",
-			BodyPath: "id",
-		},
-		&requestflag.Flag[any]{
-			Name:     "crm",
-			BodyPath: "crm",
-		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "default",
 			Usage:    "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null. For select/multiselect properties, values may be option slugs or option UUIDs on write; option slugs are returned on read.",
 			BodyPath: "default",
 		},
 		&requestflag.Flag[any]{
-			Name:     "extended",
-			BodyPath: "extended",
+			Name:     "list",
+			BodyPath: "list",
 		},
 	},
 	Action:          handlePrismObjectsActionsUpdate,
@@ -128,22 +112,14 @@ var prismObjectsActionsBulkCreate = requestflag.WithInnerFlags(cli.Command{
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"object": {
-		&requestflag.InnerFlag[string]{
-			Name:       "object.id",
-			InnerField: "id",
-		},
-		&requestflag.InnerFlag[any]{
-			Name:       "object.crm",
-			InnerField: "crm",
-		},
 		&requestflag.InnerFlag[map[string]any]{
 			Name:       "object.default",
 			Usage:      "Properties keyed by property slug. Values can be strings, numbers, booleans, arrays, or null. For select/multiselect properties, values may be option slugs or option UUIDs on write; option slugs are returned on read.",
 			InnerField: "default",
 		},
 		&requestflag.InnerFlag[any]{
-			Name:       "object.extended",
-			InnerField: "extended",
+			Name:       "object.list",
+			InnerField: "list",
 		},
 	},
 	"options": {
@@ -153,14 +129,14 @@ var prismObjectsActionsBulkCreate = requestflag.WithInnerFlags(cli.Command{
 			InnerField: "caseInsensitive",
 		},
 		&requestflag.InnerFlag[string]{
-			Name:       "options.crm-id",
-			Usage:      "App/CRM ID for context (optional)",
-			InnerField: "crm_id",
-		},
-		&requestflag.InnerFlag[string]{
 			Name:       "options.dedupe-by",
 			Usage:      "Property slug to deduplicate on",
 			InnerField: "dedupe_by",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "options.list-id",
+			Usage:      "App/CRM ID for context (optional)",
+			InnerField: "list_id",
 		},
 	},
 })
@@ -251,10 +227,6 @@ var prismObjectsActionsQuery = requestflag.WithInnerFlags(cli.Command{
 			Usage:      "Logical operator for combining filters",
 			InnerField: "combinator",
 		},
-		&requestflag.InnerFlag[string]{
-			Name:       "query.crm-id",
-			InnerField: "crm_id",
-		},
 		&requestflag.InnerFlag[[]map[string]any]{
 			Name:       "query.filter",
 			Usage:      "Filters as [{ slug: { operator: value } }]. For select/multiselect properties, values may be option slugs or option UUIDs.",
@@ -263,6 +235,10 @@ var prismObjectsActionsQuery = requestflag.WithInnerFlags(cli.Command{
 		&requestflag.InnerFlag[int64]{
 			Name:       "query.limit",
 			InnerField: "limit",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "query.list-id",
+			InnerField: "list_id",
 		},
 		&requestflag.InnerFlag[int64]{
 			Name:       "query.page",

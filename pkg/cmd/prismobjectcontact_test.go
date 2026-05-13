@@ -18,21 +18,17 @@ func TestPrismObjectsContactsCreate(t *testing.T) {
 			"--team-id", "string",
 			"prism:objects:contacts", "create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--crm", "{}",
 			"--default", "{foo: bar}",
-			"--extended", "{}",
+			"--list", "{}",
 		)
 	})
 
 	t.Run("piping data", func(t *testing.T) {
 		// Test piping YAML data over stdin
 		pipeData := []byte("" +
-			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"crm: {}\n" +
 			"default:\n" +
 			"  foo: bar\n" +
-			"extended: {}\n")
+			"list: {}\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
 			"--api-key", "string",
@@ -53,21 +49,17 @@ func TestPrismObjectsContactsUpdate(t *testing.T) {
 			"prism:objects:contacts", "update",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--contact-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--crm", "{}",
 			"--default", "{foo: bar}",
-			"--extended", "{}",
+			"--list", "{}",
 		)
 	})
 
 	t.Run("piping data", func(t *testing.T) {
 		// Test piping YAML data over stdin
 		pipeData := []byte("" +
-			"id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"crm: {}\n" +
 			"default:\n" +
 			"  foo: bar\n" +
-			"extended: {}\n")
+			"list: {}\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
 			"--api-key", "string",
@@ -102,8 +94,8 @@ func TestPrismObjectsContactsBulkCreate(t *testing.T) {
 			"--team-id", "string",
 			"prism:objects:contacts", "bulk-create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object", "{id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, crm: {}, default: {foo: bar}, extended: {}}",
-			"--options", "{caseInsensitive: true, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, dedupe_by: dedupe_by}",
+			"--object", "{default: {foo: bar}, list: {}}",
+			"--options", "{caseInsensitive: true, dedupe_by: dedupe_by, list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e}",
 		)
 	})
 
@@ -118,13 +110,11 @@ func TestPrismObjectsContactsBulkCreate(t *testing.T) {
 			"--team-id", "string",
 			"prism:objects:contacts", "bulk-create",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object.id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--object.crm", "{}",
 			"--object.default", "{foo: bar}",
-			"--object.extended", "{}",
+			"--object.list", "{}",
 			"--options.case-insensitive=true",
-			"--options.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--options.dedupe-by", "dedupe_by",
+			"--options.list-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		)
 	})
 
@@ -132,15 +122,13 @@ func TestPrismObjectsContactsBulkCreate(t *testing.T) {
 		// Test piping YAML data over stdin
 		pipeData := []byte("" +
 			"objects:\n" +
-			"  - id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"    crm: {}\n" +
-			"    default:\n" +
+			"  - default:\n" +
 			"      foo: bar\n" +
-			"    extended: {}\n" +
+			"    list: {}\n" +
 			"options:\n" +
 			"  caseInsensitive: true\n" +
-			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
-			"  dedupe_by: dedupe_by\n")
+			"  dedupe_by: dedupe_by\n" +
+			"  list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
 			t, pipeData,
 			"--api-key", "string",
@@ -188,7 +176,7 @@ func TestPrismObjectsContactsQuery(t *testing.T) {
 			"--team-id", "string",
 			"prism:objects:contacts", "query",
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--query", "{select: [string], combinator: AND, crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, filter: [{foo: {foo: string}}], limit: 1, page: 0, sort: [{foo: asc}]}",
+			"--query", "{select: [string], combinator: AND, filter: [{foo: {'=': string}}], limit: 1, list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e, page: 0, sort: [{foo: asc}]}",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--box", "string",
 			"--deleted=true",
@@ -209,9 +197,9 @@ func TestPrismObjectsContactsQuery(t *testing.T) {
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.select", "[string]",
 			"--query.combinator", "AND",
-			"--query.crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
-			"--query.filter", "[{foo: {foo: string}}]",
+			"--query.filter", "[{foo: {'=': string}}]",
 			"--query.limit", "1",
+			"--query.list-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--query.page", "0",
 			"--query.sort", "[{foo: asc}]",
 			"--id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
@@ -228,11 +216,11 @@ func TestPrismObjectsContactsQuery(t *testing.T) {
 			"  select:\n" +
 			"    - string\n" +
 			"  combinator: AND\n" +
-			"  crm_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"  filter:\n" +
 			"    - foo:\n" +
-			"        foo: string\n" +
+			"        '=': string\n" +
 			"  limit: 1\n" +
+			"  list_id: 182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e\n" +
 			"  page: 0\n" +
 			"  sort:\n" +
 			"    - foo: asc\n" +

@@ -85,10 +85,6 @@ func init() {
 			&requestflag.Flag[string]{
 				Name: "team-id",
 			},
-			&cli.StringFlag{
-				Name:  "environment",
-				Usage: "Set the environment for API requests",
-			},
 		},
 		Commands: []*cli.Command{
 			{

@@ -19,7 +19,7 @@ func TestPrismMetadataList(t *testing.T) {
 			"--team-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--object-type", "deal",
 			"--autofill=true",
-			"--crm-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
+			"--list-id", "182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 			"--term", "term",
 		)
 	})
