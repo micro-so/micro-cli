@@ -219,7 +219,7 @@ var prismObjectsIdentitiesQuery = requestflag.WithInnerFlags(cli.Command{
 	"query": {
 		&requestflag.InnerFlag[[]string]{
 			Name:       "query.select",
-			Usage:      "Property slugs to select. Use dot notation for relationships (e.g. attendee.contact.first_name)",
+			Usage:      "Property slugs to select. Use dot notation for relationships (e.g. attendee.contact.first_name). `id` is always returned at the top level of each row and does not need to be selected.",
 			InnerField: "select",
 		},
 		&requestflag.InnerFlag[string]{
@@ -234,6 +234,7 @@ var prismObjectsIdentitiesQuery = requestflag.WithInnerFlags(cli.Command{
 		},
 		&requestflag.InnerFlag[int64]{
 			Name:       "query.limit",
+			Usage:      "Maximum number of rows to return. Capped server-side at 50; requests above the cap are rejected.",
 			InnerField: "limit",
 		},
 		&requestflag.InnerFlag[string]{
