@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (2026-05-17)
+
+Full Changelog: [v0.2.0...v0.3.0](https://github.com/micro-so/micro-cli/compare/v0.2.0...v0.3.0)
+
+### Features
+
+* **api:** api update ([9713f18](https://github.com/micro-so/micro-cli/commit/9713f187a2c34c16d2550b5987af150d90cd1cde))
+
 ## 0.2.0 (2026-05-13)
 
 Full Changelog: [v0.1.1...v0.2.0](https://github.com/micro-so/micro-cli/compare/v0.1.1...v0.2.0)
