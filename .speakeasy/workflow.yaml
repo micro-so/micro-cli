@@ -1,0 +1,11 @@
+workflowVersion: 1.0.0
+speakeasyVersion: latest
+sources:
+    Prism:
+        inputs:
+            - location: registry.speakeasyapi.dev/micro/micro/prism
+targets:
+    micro-cli:
+        target: cli
+        source: Prism
+        output: .
