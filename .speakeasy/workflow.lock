@@ -1,0 +1,26 @@
+speakeasyVersion: 1.769.2
+sources:
+    Prism:
+        sourceNamespace: prism
+        sourceRevisionDigest: sha256:ab6b12c44c5bf79b29f105c28a41ea0265de149fc488cbaebf8765cafee0fea9
+        sourceBlobDigest: sha256:a131663c13d868e20cedff6deaaac8e89b722b4a11b22173bef32253cd16b4bb
+        tags:
+            - latest
+targets:
+    micro-cli:
+        source: Prism
+        sourceNamespace: prism
+        sourceRevisionDigest: sha256:ab6b12c44c5bf79b29f105c28a41ea0265de149fc488cbaebf8765cafee0fea9
+        sourceBlobDigest: sha256:a131663c13d868e20cedff6deaaac8e89b722b4a11b22173bef32253cd16b4bb
+workflow:
+    workflowVersion: 1.0.0
+    speakeasyVersion: latest
+    sources:
+        Prism:
+            inputs:
+                - location: registry.speakeasyapi.dev/micro/micro/prism
+    targets:
+        micro-cli:
+            target: cli
+            source: Prism
+            output: .

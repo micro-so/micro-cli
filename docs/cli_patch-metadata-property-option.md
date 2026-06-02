@@ -1,0 +1,62 @@
+## cli patch-metadata-property-option
+
+Update a property option
+
+### Synopsis
+
+Update a property option
+
+```
+cli patch-metadata-property-option [flags]
+```
+
+### Examples
+
+```
+  cli SDK patch-metadata-property-option --team-id e8e78353-372c-4662-9b0e-ce25f7aa085d --object-type deal --property-id 2e0aa9c0-3a10-452e-acf5-5d988bc5985a --option-id f7c352cb-18ee-453a-92a4-94a9bc41a045 --type multiref_attendee
+```
+
+### Options
+
+```
+      --body string                                Request body as JSON (alternative to individual flags). Can also be provided via stdin.
+  -c, --color-scheme string                        string value
+      --description string                         string value
+  -e, --enabled                                    boolean flag
+  -h, --help                                       help for patch-metadata-property-option
+      --icon string                                string value
+      --idempotency-key idempotency_key_mismatch   A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 idempotency_key_mismatch. Replays include the `idempotent-replay: true` response header.
+  -l, --list-id string                             string value
+      --object-type string                         options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --option-group string                        string value
+      --option-id string                           [required]
+  -p, --property-id string                         [required]
+      --slug string                                string value
+      --sort-index string                          integer value
+      --team-id string                             [required]
+      --type string                                Storage type for a property definition. (options: num, str, bool, date, text, byte, select_str, multi_str, multiselect_str, jsonb, ref_identity, ref_user, ref_organization, ref_organization_user, ref_contact, ref_thread, ref_message, ref_event, ref_account, multiref_ai_chat_message, multiref_action, multiref_contact, multiref_label, multiref_thread, multiref_messages, multiref_document, multiref_identity, multiref_organization, multiref_organization_user, multiref_engagement, multiref_attendee, multiref_meeting_entry, multiref_read_receipt, multiref_account) [required]
+  -v, --value string                               string value
+```
+
+### Options inherited from parent commands
+
+```
+      --agent-mode             Enable structured errors and default TOON output for AI coding agents. Automatically enabled when a known agent environment is detected (CLAUDE_CODE, CURSOR_AGENT, etc.). Use --agent-mode=false to disable.
+      --api-key x-api-key      Public API key generated from Micro settings. Sent as the x-api-key header and validated by AWS API Gateway in front of the service.
+      --color string           Control colored output: auto (color when output is a TTY), always, or never. Respects NO_COLOR and FORCE_COLOR env vars. (default "auto")
+  -d, --debug                  Log request and response diagnostics to stderr
+      --dry-run                Preview the request that would be sent without executing it (output to stderr)
+  -H, --header stringArray     Set a custom HTTP request header (format: "Key: Value"). Can be specified multiple times.
+      --include-headers        Include HTTP response headers in the output
+  -q, --jq string              Filter and transform output using a jq expression (e.g., '.name', '.items[] | .id')
+      --no-interactive         Disable all interactive features (auto-prompting, explorer auto-launch, TUI forms)
+  -o, --output-format string   Specify the output format. Options: pretty, json, yaml, table, toon. (default "pretty")
+      --server string          Select a server by index (for indexed servers) or name (for named servers)
+      --server-url string      Override the default server URL
+      --timeout string         HTTP request timeout (e.g., 30s, 5m, 100ms)
+      --usage                  Print the CLI Usage schema in KDL format
+```
+
+### SEE ALSO
+
+* [cli](cli.md)	 - cli command-line interface
