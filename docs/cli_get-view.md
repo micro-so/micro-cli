@@ -26,7 +26,7 @@ cli get-view [flags]
   -p, --page include=records      Forwarded to the records sub-resource when include=records.
   -t, --team-id string            [required]
       --view-id string            [required]
-      --view-object-type string   options: action, deal, document, event, identity, organization [required]
+      --view-object-type string   options: comment, action, deal, engagement, document, event, identity, organization [required]
 ```
 
 ### Options inherited from parent commands

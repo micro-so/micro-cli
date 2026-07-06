@@ -10,7 +10,9 @@ import (
 type ObjectType string
 
 const (
+	ObjectTypeComment       ObjectType = "comment"
 	ObjectTypeDeal          ObjectType = "deal"
+	ObjectTypeEngagement    ObjectType = "engagement"
 	ObjectTypeIdentity      ObjectType = "identity"
 	ObjectTypeAiChatThread  ObjectType = "ai_chat_thread"
 	ObjectTypeAiChatMessage ObjectType = "ai_chat_message"
@@ -30,7 +32,11 @@ func (e *ObjectType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch v {
+	case "comment":
+		fallthrough
 	case "deal":
+		fallthrough
+	case "engagement":
 		fallthrough
 	case "identity":
 		fallthrough

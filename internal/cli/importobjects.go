@@ -15,7 +15,7 @@ import (
 
 var importObjectsCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"identity", "organization", "contact", "action", "document", "deal"}, Description: "options: identity, organization, contact, action, document, deal [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "identity", "organization", "contact", "action", "document", "engagement", "deal"}, Description: "options: comment, identity, organization, contact, action, document, engagement, deal [required]"},
 	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 	{FlagName: "objects", FieldPath: "Body.Objects", Kind: flagutil.FlagKindJSON, Required: true, Annotations: `json:"objects"`, Description: "Array of objects to import with property values keyed by slug [required]"},
 	{FlagName: "options", FieldPath: "Body.Options", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"options,omitempty"`, Description: "JSON object"},
