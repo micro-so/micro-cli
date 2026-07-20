@@ -14,7 +14,9 @@ import (
 type ObjectType string
 
 const (
+	ObjectTypeComment       ObjectType = "comment"
 	ObjectTypeDeal          ObjectType = "deal"
+	ObjectTypeEngagement    ObjectType = "engagement"
 	ObjectTypeIdentity      ObjectType = "identity"
 	ObjectTypeAiChatThread  ObjectType = "ai_chat_thread"
 	ObjectTypeAiChatMessage ObjectType = "ai_chat_message"
@@ -34,7 +36,11 @@ func (e *ObjectType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch v {
+	case "comment":
+		fallthrough
 	case "deal":
+		fallthrough
+	case "engagement":
 		fallthrough
 	case "identity":
 		fallthrough
@@ -404,7 +410,7 @@ func (u ID) MarshalJSON() ([]byte, error) {
 
 type QueryRequestBody struct {
 	Query Query `json:"query"`
-	// Alternative location for the opaque cursor (sibling of `query`). Use whichever feels more natural; if both are present, `query.cursor` wins.
+	// Alternative location for the opaque cursor (a sibling of `query`). Use whichever feels more natural; if both are present, `query.cursor` wins.
 	Cursor *string `json:"cursor,omitzero"`
 	// When true, the response includes a `total` field with the unpaginated row count. Costs an additional pass over the result set — for unfiltered totals prefer `GET /v2/prism/{teamId}/{objectType}/count` instead.
 	IncludeTotal *bool    `default:"false" json:"include_total"`

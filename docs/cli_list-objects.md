@@ -25,7 +25,7 @@ cli list-objects [flags]
   -i, --include-total true   When set to true, the response includes a `total` field with the unpaginated row count. Costs an extra pass; prefer `GET .../count` for the unfiltered total.
       --limit int            Maximum number of rows to return. Capped server-side at 50.
       --list-id string       Scope properties to a specific list/app.
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
       --select id            Comma-separated property slugs to return. Use dot notation for relationships. id is always returned at the top level. Defaults to all properties.
       --sort -               Comma-separated list of slugs. Prefix with - for descending. Example: `sort=-updated_at,name`.
   -t, --team-id string       [required]

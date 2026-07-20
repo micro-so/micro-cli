@@ -1,17 +1,17 @@
-speakeasyVersion: 1.769.2
+speakeasyVersion: 1.790.2
 sources:
     Prism:
         sourceNamespace: prism
-        sourceRevisionDigest: sha256:ab6b12c44c5bf79b29f105c28a41ea0265de149fc488cbaebf8765cafee0fea9
-        sourceBlobDigest: sha256:a131663c13d868e20cedff6deaaac8e89b722b4a11b22173bef32253cd16b4bb
+        sourceRevisionDigest: sha256:10f7882562313c7be78fd31e2f984553b58b2ba3a09e212fa890d161fe09b017
+        sourceBlobDigest: sha256:df7ff4bee0dc3d99e95047aed93c851eaad978c4c40b34151c87a9265740af79
         tags:
             - latest
 targets:
     micro-cli:
         source: Prism
         sourceNamespace: prism
-        sourceRevisionDigest: sha256:ab6b12c44c5bf79b29f105c28a41ea0265de149fc488cbaebf8765cafee0fea9
-        sourceBlobDigest: sha256:a131663c13d868e20cedff6deaaac8e89b722b4a11b22173bef32253cd16b4bb
+        sourceRevisionDigest: sha256:10f7882562313c7be78fd31e2f984553b58b2ba3a09e212fa890d161fe09b017
+        sourceBlobDigest: sha256:df7ff4bee0dc3d99e95047aed93c851eaad978c4c40b34151c87a9265740af79
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest

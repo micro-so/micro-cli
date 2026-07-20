@@ -25,7 +25,7 @@ cli list-view-records [flags]
   -p, --page cursor               Page number (1-based). Prefer cursor.
   -t, --team-id string            [required]
       --view-id string            [required]
-      --view-object-type string   options: action, deal, document, event, identity, organization [required]
+      --view-object-type string   options: comment, action, deal, engagement, document, event, identity, organization [required]
 ```
 
 ### Options inherited from parent commands

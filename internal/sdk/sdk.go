@@ -2,7 +2,7 @@
 
 package sdk
 
-// Generated from OpenAPI doc version 2.0.0 and generator version 2.892.5
+// Generated from OpenAPI doc version 2.0.0 and generator version 2.918.3
 
 import (
 	"bytes"
@@ -113,7 +113,7 @@ func New(serverURL string, opts ...SDKOption) *SDK {
 	sdk := &SDK{
 		SDKVersion: "0.0.1",
 		sdkConfiguration: config.SDKConfiguration{
-			UserAgent: "speakeasy-sdk/go 0.0.1 2.892.5 2.0.0 openapi/internal/sdk",
+			UserAgent: "speakeasy-sdk/go 0.0.1 2.918.3 2.0.0 openapi/internal/sdk",
 		},
 		hooks: hooks.New(),
 	}
