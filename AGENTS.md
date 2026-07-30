@@ -1,6 +1,6 @@
 # AGENTS.md
 
-`cli` is Micro's command-line client for working with CRM records, metadata, imports, and views. Use it when an agent needs to inspect or change Micro data from a shell; prefer it to the raw API because it supplies authentication, request validation, structured agent errors, output formatting, and dry-run diagnostics.
+`cli` is Micro's v1.0.0 command-line client. Use it to inspect or change Micro records, metadata, imports, grants, and views from a shell. Do not invent a `micro` binary or commands such as `micro login`, `micro status`, `micro get`, or `micro deals list`: they are not part of this CLI.
 
 ## Install and authenticate
 
@@ -8,83 +8,89 @@
 # macOS/Linux
 curl -fsSL https://raw.githubusercontent.com/micro-so/micro-cli/main/scripts/install.sh | bash
 
-# API key used by the CLI
+# Non-interactive authentication for agents and scripts
 export CLI_API_KEY="..."
 
-# Shell convenience only: the CLI has no configured team-ID environment variable.
+# Shell convenience only; pass it explicitly to every data command.
 export MICRO_TEAM_ID="..."
+
+# Verify the resolved credential source (the value is masked).
+cli whoami
 ```
 
-`CLI_API_KEY` is the real credential environment variable. Pass the required team on every command with `--team-id "$MICRO_TEAM_ID"` (or a literal ID). Flags override environment variables, and `cli configure` is interactive, so do not use it in agent mode.
+`CLI_API_KEY` is the credential environment variable. `cli configure` is interactive and stores credentials in the OS keychain when available (with a config-file fallback), so agents should use `CLI_API_KEY` instead. Flags take precedence over environment variables, which take precedence over stored credentials.
+
+Every data command requires `--team-id "$MICRO_TEAM_ID"` (or a literal team ID). `whoami`, `configure`, and `version` are configuration commands, not data commands.
 
 ## Golden paths
 
-All examples use non-interactive, machine-readable output. Replace placeholder IDs and property slugs with values from the user's Micro workspace.
+Use `--no-interactive --output-format json` in scripts. Replace placeholder IDs and property slugs with values from the user's workspace.
 
 ```bash
-# List recent contacts, selecting only needed properties.
+# List a small page. Use the returned next_cursor unchanged for the next page.
 cli list-objects --team-id "$MICRO_TEAM_ID" --object-type contact \
   --select "name,email" --sort "-updated_at" --limit 25 \
   --no-interactive --output-format json
 
-# Fetch one deal with a limited field set.
+# Read one record, or find one by an exact property value.
 cli get-object --team-id "$MICRO_TEAM_ID" --object-type deal \
   --object-id "$DEAL_ID" --select "name,amount,stage" \
   --no-interactive --output-format json
 
-# Find one contact by an exact property value.
 cli find-object-by-slug --team-id "$MICRO_TEAM_ID" --object-type contact \
   --slug email --value "person@example.com" \
   --no-interactive --output-format json
 
-# Query contacts with a query body and selected fields.
+# Run a structured query or get an unfiltered object-type count.
 cli query --team-id "$MICRO_TEAM_ID" --object-type contact \
   --query '{"select":["name","email"],"combinator":"AND"}' \
   --no-interactive --output-format json
 
-# Create a deal. Use a new idempotency key for this logical operation.
+cli count-objects --team-id "$MICRO_TEAM_ID" --object-type contact \
+  --no-interactive --output-format json
+
+# Read the available property definitions before writing unfamiliar fields.
+cli get-metadata-properties-by-object-type \
+  --team-id "$MICRO_TEAM_ID" --object-type contact \
+  --no-interactive --output-format json
+
+# Create, patch, or upsert records. Use a new idempotency key per logical write.
 cli create-object --team-id "$MICRO_TEAM_ID" --object-type deal \
   --body '{"default":{"name":"Expansion deal"}}' \
   --idempotency-key "$IDEMPOTENCY_KEY" --no-interactive --output-format json
 
-# Update a known deal. --if-match "*" requires that it already exists.
 cli patch-object --team-id "$MICRO_TEAM_ID" --object-type deal \
   --object-id "$DEAL_ID" --body '{"default":{"stage":"qualified"}}' \
-  --if-match "*" --idempotency-key "$IDEMPOTENCY_KEY" \
+  --if-match "$ETAG" --idempotency-key "$IDEMPOTENCY_KEY" \
   --no-interactive --output-format json
 
-# Create or update a contact identified by email.
 cli upsert-object --team-id "$MICRO_TEAM_ID" --object-type contact \
   --slug email --value "person@example.com" \
   --body '{"default":{"name":"Ada Lovelace"}}' \
   --idempotency-key "$IDEMPOTENCY_KEY" --no-interactive --output-format json
 
-# Bulk import contacts. Reuse this same key only when retrying this same payload.
+# Import records, then poll if the returned job is still processing.
 cli import-objects --team-id "$MICRO_TEAM_ID" --object-type contact \
   --objects '[{"default":{"name":"Ada Lovelace","email":"ada@example.com"}}]' \
   --idempotency-key "$IDEMPOTENCY_KEY" --no-interactive --output-format json
 
-# Poll an asynchronous import using the job_id returned by import-objects.
 cli get-import-job --team-id "$MICRO_TEAM_ID" --job-id "$JOB_ID" \
-  --no-interactive --output-format json
-
-# Get an unfiltered count without paging through records.
-cli count-objects --team-id "$MICRO_TEAM_ID" --object-type contact \
   --no-interactive --output-format json
 ```
 
+The additional command families are `get-grant`/`update-grant`; metadata-property and metadata-option commands; `batch-update-objects`, `batch-delete-objects`, `restore-object`, and `duplicate-object`; and view commands including `create-view`, `get-view`, `patch-view`, `delete-view`, `list-view-records`, `reorder-view-records`, `pin-view-record`, and `unpin-view-record`.
+
 ## Output and scripting
 
-- Use `--no-interactive` in scripts. Known coding-agent environments automatically enable agent mode, which defaults to TOON and returns structured errors; set `--output-format json` when a script needs JSON.
-- Supported output formats are `pretty`, `json`, `yaml`, `table`, and `toon`; `--jq '<expression>'` filters output and emits JSON.
-- Commands accepting request bodies support individual flags, `--body '<json>'`, or JSON on stdin. Priority is individual flags, then `--body`, then stdin: `printf '%s' '{"default":{"name":"Ada"}}' | cli create-object ...`.
-- Exit code `0` means success; `1` means an API, validation, or transport error. Success is written to stdout and errors to stderr. Capture them separately when scripting.
+- Global output flags are `-o, --output-format` (`pretty`, `json`, `yaml`, `table`, or `toon`) and `-q, --jq`.
+- `--agent-mode` is automatically enabled in known coding-agent environments and supplies structured errors with TOON as the default output. `--no-interactive` disables prompts and the explorer UI.
+- Commands accepting bodies support individual flags, `--body '<json>'`, or JSON on stdin. Individual flags win over `--body`, which wins over stdin.
+- Use `--cursor "$NEXT_CURSOR"` to paginate list results; the next cursor appears as `next_cursor`. `list-objects --limit` is capped at 50.
 
-## Safety and errors
+## Safety rules
 
-- Always provide an idempotency key for imports and any retryable create, update, upsert, or patch. Never reuse a key with a changed request body.
-- Never run `delete-object` or `batch-delete-objects` unless the user explicitly asks to delete those records.
-- Prefer `list-objects` or `get-object` with `--select` and a small `--limit` to minimize data exposure and output size.
-- Use `--dry-run` to inspect a request without sending it. Use `--debug` for request/response diagnostics; both write diagnostics to stderr and redact sensitive values.
-- In agent mode or JSON output, errors are structured and include `error_type`, `message`, and sometimes `hints`. Check HTTP status and message before retrying; a `409 idempotency_key_mismatch` means the key was reused with a different payload.
-- Command reference: `docs/cli_*.md` in this repository and <https://docs.micro.so>.
+- Use `--dry-run` to preview a request without executing it; use `-d, --debug` only when request/response diagnostics are needed.
+- For a mutation command that supports `--idempotency-key`, provide a fresh key for each logical operation. The server caches the first response for 24 hours; retry only the identical request with that key. A changed body with the same key returns `409 idempotency_key_mismatch`.
+- `patch-object` and `delete-object` accept `--if-match`. Prefer the `etag` from a prior read; a mismatch returns `412 precondition_failed`. `--if-match "*"` only asserts that the record exists.
+- Never run `delete-object`, `batch-delete-objects`, or `delete-view` unless the user explicitly asks to delete those specific resources. Prefer a narrow `--select` and a small `--limit` before any write.
+- Use `docs/cli_*.md`, `cli <command> --help`, or `cli --usage` as the source of truth for command-specific flags.
