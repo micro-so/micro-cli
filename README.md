@@ -157,6 +157,8 @@ cli configure
 Configuration is stored in `~/.config/cli/config.yaml`.
 <!-- End Authentication [security] -->
 
+For non-interactive automation, see [AI agents & scripts](docs/AGENT-USAGE.md).
+
 <!-- Start Available Commands [operations] -->
 ## Available Commands
 
