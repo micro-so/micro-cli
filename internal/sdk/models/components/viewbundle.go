@@ -95,6 +95,7 @@ func (u ViewBundleGroupHiddenOptionIdsUnion) IsUnknown() bool {
 }
 
 func (u *ViewBundleGroupHiddenOptionIdsUnion) UnmarshalJSON(data []byte) error {
+	*u = ViewBundleGroupHiddenOptionIdsUnion{}
 
 	var candidates []utils.UnionCandidate
 

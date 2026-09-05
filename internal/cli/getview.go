@@ -15,7 +15,7 @@ import (
 
 var getViewCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "include", Shorthand: "i", FieldPath: "Include", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated list of optional sub-resources to inline. Currently the only recognized value is `records` — when present, the response is `{view, records}` rather than the bare view bundle."},
 	{FlagName: "cursor", Shorthand: "c", FieldPath: "Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Forwarded to the records sub-resource when `include=records`."},

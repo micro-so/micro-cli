@@ -21,7 +21,7 @@ cli find-object-by-slug [flags]
 ```
   -h, --help                 help for find-object-by-slug
   -l, --list-id string       Scope the lookup to a specific list/app.
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
   -s, --slug email           Property slug to match (e.g. email). [required]
   -t, --team-id string       [required]
   -v, --value string         Property value to match exactly. URL-encode special characters. [required]

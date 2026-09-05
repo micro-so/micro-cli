@@ -21,12 +21,12 @@ cli query [flags]
 ```
       --body string           Request body as JSON (alternative to individual flags). Can also be provided via stdin.
   -b, --boxes stringArray     list of values
-  -c, --cursor query          Alternative location for the opaque cursor (sibling of query). Use whichever feels more natural; if both are present, `query.cursor` wins.
+  -c, --cursor query          Alternative location for the opaque cursor (a sibling of query). Use whichever feels more natural; if both are present, `query.cursor` wins.
       --deleted               boolean flag
   -h, --help                  help for query
       --id string             JSON value (one of: string | array of string)
       --include-total total   When true, the response includes a total field with the unpaginated row count. Costs an additional pass over the result set — for unfiltered totals prefer `GET /v2/prism/{teamId}/{objectType}/count` instead.
-      --object-type string    options: deal, identity, ai_chat_thread, ai_chat_message, document, organization, contact, action, event [required]
+      --object-type string    options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, organization, contact, action, event [required]
       --query string          [required]
   -s, --sources stringArray   list of values
   -t, --team-id string        [required]
