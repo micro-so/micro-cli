@@ -87,17 +87,15 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 		cfg = &config.Config{}
 	}
 
+	keychainStored := false
+
 	if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
 		// Non-interactive: store any explicitly-set flags without prompting
 		changed := false
 		if f := cmd.Flags().Lookup("api-key"); f != nil && f.Changed {
 			v, _ := cmd.Flags().GetString("api-key")
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", v); err != nil {
-					cfg.Security.ApiKey = v // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = v // no keyring, store in config
+			if config.StoreSecret("api-key", v, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 			changed = true
 		}
@@ -116,7 +114,7 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 				Title("Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.").
 				Description("--api-key").
 				EchoMode(huh.EchoModePassword).
-				Placeholder(maskSecret(cfg.Security.ApiKey)).
+				Placeholder(maskSecret(config.GetStoredSecret("api-key", cfg.Security.ApiKey))).
 				Value(&authApiKey),
 		}
 
@@ -131,12 +129,8 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		if authApiKey != "" {
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", authApiKey); err != nil {
-					cfg.Security.ApiKey = authApiKey // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = authApiKey // no keyring, store in config
+			if config.StoreSecret("api-key", authApiKey, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 		}
 
@@ -147,7 +141,7 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	out := cmd.OutOrStderr()
-	if config.KeyringAvailable() {
+	if keychainStored {
 		fmt.Fprintln(out, "Secret credentials stored in OS keychain")
 	}
 	fmt.Fprintf(out, "Configuration saved to %s\n", config.GetConfigPath())

@@ -21,7 +21,7 @@ cli delete-metadata-property-option [flags]
 ```
   -h, --help                 help for delete-metadata-property-option
   -l, --list-id string       string value
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
       --option-id string     [required]
   -p, --property-id string   [required]
       --team-id string       [required]

@@ -22,7 +22,7 @@ cli get-metadata-properties-by-object-type [flags]
   -a, --autofill             boolean flag
   -h, --help                 help for get-metadata-properties-by-object-type
   -l, --list-id string       Scope properties to a specific list/app.
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
       --team-id string       [required]
       --term string          string value
 ```
