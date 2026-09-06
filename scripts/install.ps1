@@ -71,7 +71,7 @@ function Install-CLI {
     }
 
     # Construct download URL
-    $archiveName = "cli_Windows_$arch.zip"
+    $archiveName = "micro-cli_Windows_$arch.zip"
     $downloadUrl = "https://github.com/$Repo/releases/download/$Version/$archiveName"
 
     Write-ColorOutput "Downloading from: $downloadUrl" -Color Cyan

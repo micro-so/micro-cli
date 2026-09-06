@@ -45,13 +45,17 @@ curl -fsSL https://raw.githubusercontent.com/micro-so/micro-cli/main/scripts/ins
 iwr -useb https://raw.githubusercontent.com/micro-so/micro-cli/main/scripts/install.ps1 | iex
 ```
 
-### Go Install
+### Build from source
 
-Alternatively, install directly via Go:
+To build the current source with Go (see `go.mod` for the required version):
 
 ```bash
-go install openapi/cmd/cli@latest
+git clone https://github.com/micro-so/micro-cli.git
+cd micro-cli
+go install ./cmd/cli
 ```
+
+The binary is installed into `GOBIN`, or `$(go env GOPATH)/bin` when `GOBIN` is unset. Add that directory to your `PATH` and run `cli --help`. The module uses the local name `openapi`, so `go install ...@latest` is not supported; use the release installer above for a prebuilt binary.
 
 ### Manual Download
 
