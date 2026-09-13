@@ -24,7 +24,7 @@ cli pin-view-record [flags]
       --object-id string                           [required]
   -t, --team-id string                             [required]
       --view-id string                             [required]
-      --view-object-type string                    options: action, deal, document, event, identity, organization [required]
+      --view-object-type string                    options: comment, action, deal, engagement, document, event, identity, organization [required]
 ```
 
 ### Options inherited from parent commands

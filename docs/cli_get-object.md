@@ -21,7 +21,7 @@ cli get-object [flags]
 ```
   -h, --help                 help for get-object
       --object-id string     [required]
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
   -s, --select id            Comma-separated property slugs to return. Use dot notation for relationships. id is always returned at the top level. Defaults to all properties.
   -t, --team-id string       [required]
 ```

@@ -22,7 +22,7 @@ cli delete-view [flags]
   -h, --help                      help for delete-view
   -t, --team-id string            [required]
       --view-id string            [required]
-      --view-object-type string   options: action, deal, document, event, identity, organization [required]
+      --view-object-type string   options: comment, action, deal, engagement, document, event, identity, organization [required]
 ```
 
 ### Options inherited from parent commands

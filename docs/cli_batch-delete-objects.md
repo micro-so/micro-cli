@@ -23,7 +23,7 @@ cli batch-delete-objects [flags]
   -h, --help                                       help for batch-delete-objects
       --idempotency-key idempotency_key_mismatch   A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 idempotency_key_mismatch. Replays include the `idempotent-replay: true` response header.
       --ids stringArray                            [required]
-      --object-type string                         options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string                         options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
   -t, --team-id string                             [required]
 ```
 

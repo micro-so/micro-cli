@@ -25,7 +25,7 @@ cli create-metadata-property [flags]
       --idempotency-key idempotency_key_mismatch   A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 idempotency_key_mismatch. Replays include the `idempotent-replay: true` response header.
   -l, --list-id string                             string value
   -n, --name string                                Human-readable name. Must be unique within (team, list). [required]
-      --object-type string                         options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string                         options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
       --options type                               Only honored when type is `select_str` or `multiselect_str`.
   -s, --slug name                                  URL-safe identifier. Defaults to a slugified name. Disambiguated with a numeric suffix on conflict.
       --team-id string                             [required]

@@ -15,9 +15,9 @@ import (
 
 var queryCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action", "event"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, organization, contact, action, event [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action", "event"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, organization, contact, action, event [required]"},
 	{FlagName: "query", FieldPath: "Body.Query", Kind: flagutil.FlagKindJSON, Required: true, Annotations: `json:"query"`, Description: "[required]"},
-	{FlagName: "cursor", Shorthand: "c", FieldPath: "Body.Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Alternative location for the opaque cursor (sibling of `query`). Use whichever feels more natural; if both are present, `query.cursor` wins."},
+	{FlagName: "cursor", Shorthand: "c", FieldPath: "Body.Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Alternative location for the opaque cursor (a sibling of `query`). Use whichever feels more natural; if both are present, `query.cursor` wins."},
 	{FlagName: "include-total", FieldPath: "Body.IncludeTotal", Kind: flagutil.FlagKindBool, Optional: true, HasDefault: true, Description: "When true, the response includes a `total` field with the unpaginated row count. Costs an additional pass over the result set — for unfiltered totals prefer `GET /v2/prism/{teamId}/{objectType}/count` instead."},
 	{FlagName: "id", FieldPath: "Body.ID", Kind: flagutil.FlagKindUnion, Union: &flagutil.UnionMeta{Discriminated: false, Optional: true, TypeDescription: "JSON value (one of: string | array of string)"}},
 	{FlagName: "deleted", FieldPath: "Body.Deleted", Kind: flagutil.FlagKindBool, Optional: true, Description: "boolean flag"},
