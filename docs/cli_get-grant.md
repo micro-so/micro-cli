@@ -21,7 +21,7 @@ cli get-grant [flags]
 ```
   -h, --help                 help for get-grant
       --object-id string     [required]
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
   -t, --team-id string       [required]
 ```
 

@@ -21,7 +21,7 @@ cli count-objects [flags]
 ```
   -h, --help                 help for count-objects
   -l, --list-id string       Scope the count to a specific list/app.
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
   -t, --team-id string       [required]
 ```
 

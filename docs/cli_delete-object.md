@@ -22,7 +22,7 @@ cli delete-object [flags]
   -h, --help                 help for delete-object
   -i, --if-match etag        Optimistic concurrency. Pass back the etag header from a previous GET of this record; the write only proceeds if the record hasn't changed since. Mismatch → 412 `precondition_failed`. Use `*` to require the record exists (any ETag accepted).
       --object-id string     [required]
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
   -t, --team-id string       [required]
 ```
 

@@ -55,16 +55,14 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 	if cfg == nil {
 		cfg = &config.Config{}
 	}
+
+	keychainStored := false
 	if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
 		changed := false
 		if f := cmd.Flags().Lookup("api-key"); f != nil && f.Changed {
 			v, _ := cmd.Flags().GetString("api-key")
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", v); err != nil {
-					cfg.Security.ApiKey = v // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = v // no keyring, store in config
+			if config.StoreSecret("api-key", v, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 			changed = true
 		}
@@ -82,7 +80,7 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 				Title("Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.").
 				Description("--api-key").
 				EchoMode(huh.EchoModePassword).
-				Placeholder(maskSecret(cfg.Security.ApiKey)).
+				Placeholder(maskSecret(config.GetStoredSecret("api-key", cfg.Security.ApiKey))).
 				Value(&authApiKey),
 		}
 		groups = append(groups, huh.NewGroup(securityFields...).Title("Authentication"))
@@ -119,12 +117,8 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("configure: %w", err)
 		}
 		if authApiKey != "" {
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", authApiKey); err != nil {
-					cfg.Security.ApiKey = authApiKey // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = authApiKey // no keyring, store in config
+			if config.StoreSecret("api-key", authApiKey, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 		}
 		if !accessible {
@@ -142,7 +136,7 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	out := cmd.OutOrStdout()
-	if config.KeyringAvailable() {
+	if keychainStored {
 		fmt.Fprintln(out, "Secret credentials stored in OS keychain")
 	}
 	fmt.Fprintf(out, "Configuration saved to %s\n", config.GetConfigPath())
