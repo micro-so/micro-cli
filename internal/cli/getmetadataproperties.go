@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -26,9 +25,13 @@ func initGetMetadataPropertiesCmd(parent *cobra.Command) error {
 		Use:     "get-metadata-properties",
 		Short:   "Get metadata properties",
 		Long:    "Get metadata properties",
-		Example: "  cli SDK get-metadata-properties --team-id 6c9deea2-be0e-4c08-ab7c-0ad7a92abede",
+		Example: "  cli get-metadata-properties --team-id 6c9deea2-be0e-4c08-ab7c-0ad7a92abede",
+		Args:    cobra.NoArgs,
 		RunE:    runGetMetadataPropertiesCmd,
 		Aliases: []string{"gmp"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getMetadataProperties",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getMetadataPropertiesCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetMetadataPropertiesRequest](getMetadataPropertiesCmdMeta); err != nil {
@@ -43,14 +46,9 @@ func runGetMetadataPropertiesCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getMetadataPropertiesCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getMetadataPropertiesCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.GetMetadataPropertiesRequest](cmd, getMetadataPropertiesCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

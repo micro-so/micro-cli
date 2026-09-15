@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var countObjectsCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "list-id", Shorthand: "l", FieldPath: "ListID", Kind: flagutil.FlagKindString, Optional: true, Description: "Scope the count to a specific list/app."},
 }
 
@@ -25,9 +24,13 @@ func initCountObjectsCmd(parent *cobra.Command) error {
 		Use:     "count-objects",
 		Short:   "Total record count for an object type",
 		Long:    "Returns the total number of records of this object type that the caller can see. Avoids the page-overshoot anti-pattern — clients no longer need to keep paging until `has_more` flips false to discover the total. Currently does not apply query filters; for a filtered total, pass `include_total: true` in a POST `/query` body.",
-		Example: "  cli SDK count-objects --team-id 334bc1a2-d093-4be8-8078-f7ef2fa13681 --object-type organization",
+		Example: "  cli count-objects --team-id 334bc1a2-d093-4be8-8078-f7ef2fa13681 --object-type organization",
+		Args:    cobra.NoArgs,
 		RunE:    runCountObjectsCmd,
 		Aliases: []string{"co"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "countObjects",
+		},
 	}
 	flagutil.RegisterFlags(cmd, countObjectsCmdMeta)
 	if err := flagutil.ValidateMeta[operations.CountObjectsRequest](countObjectsCmdMeta); err != nil {
@@ -42,14 +45,9 @@ func runCountObjectsCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, countObjectsCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, countObjectsCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.CountObjectsRequest](cmd, countObjectsCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

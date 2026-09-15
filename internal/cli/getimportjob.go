@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -24,9 +23,13 @@ func initGetImportJobCmd(parent *cobra.Command) error {
 		Use:     "get-import-job",
 		Short:   "Get the status of an import job",
 		Long:    "Poll the status of an async import. Sync imports complete in the original response and don't appear here. Async jobs are retained for 7 days. Returns 404 once the job has expired.",
-		Example: "  cli SDK get-import-job --team-id 7951e46f-5947-4685-9da7-54824ebc0f4d --job-id <id>",
+		Example: "  cli get-import-job --team-id 7951e46f-5947-4685-9da7-54824ebc0f4d --job-id <id>",
+		Args:    cobra.NoArgs,
 		RunE:    runGetImportJobCmd,
 		Aliases: []string{"gij"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getImportJob",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getImportJobCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetImportJobRequest](getImportJobCmdMeta); err != nil {
@@ -41,14 +44,9 @@ func runGetImportJobCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getImportJobCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getImportJobCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.GetImportJobRequest](cmd, getImportJobCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

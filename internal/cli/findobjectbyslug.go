@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var findObjectBySlugCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "slug", Shorthand: "s", FieldPath: "Slug", Kind: flagutil.FlagKindString, Required: true, Description: "Property slug to match (e.g. `email`). [required]"},
 	{FlagName: "value", Shorthand: "v", FieldPath: "Value", Kind: flagutil.FlagKindString, Required: true, Description: "Property value to match exactly. URL-encode special characters. [required]"},
 	{FlagName: "list-id", Shorthand: "l", FieldPath: "ListID", Kind: flagutil.FlagKindString, Optional: true, Description: "Scope the lookup to a specific list/app."},
@@ -27,9 +26,13 @@ func initFindObjectBySlugCmd(parent *cobra.Command) error {
 		Use:     "find-object-by-slug",
 		Short:   "Find a record by property value",
 		Long:    "Returns the single record whose property `{slug}` equals `{value}`. 404 if nothing matches; 409 if more than one record matches.",
-		Example: "  cli SDK find-object-by-slug --team-id e54fbad4-3704-4d6b-9abb-c3d409815b9a --object-type event --slug <value> --value <value>",
+		Example: "  cli find-object-by-slug --team-id e54fbad4-3704-4d6b-9abb-c3d409815b9a --object-type event --slug <value> --value <value>",
+		Args:    cobra.NoArgs,
 		RunE:    runFindObjectBySlugCmd,
 		Aliases: []string{"fobs"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "findObjectBySlug",
+		},
 	}
 	flagutil.RegisterFlags(cmd, findObjectBySlugCmdMeta)
 	if err := flagutil.ValidateMeta[operations.FindObjectBySlugRequest](findObjectBySlugCmdMeta); err != nil {
@@ -44,14 +47,9 @@ func runFindObjectBySlugCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, findObjectBySlugCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, findObjectBySlugCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.FindObjectBySlugRequest](cmd, findObjectBySlugCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

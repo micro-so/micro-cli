@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,10 +14,10 @@ import (
 
 var pinViewRecordCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 }
 
 // initPinViewRecordCmd initializes the pin-view-record command.
@@ -27,9 +26,13 @@ func initPinViewRecordCmd(parent *cobra.Command) error {
 		Use:     "pin-view-record",
 		Short:   "Pin a record to the view (append to record_order)",
 		Long:    "Pin a record to the view (append to record_order)",
-		Example: "  cli SDK pin-view-record --team-id c22ee78c-f1a8-4032-a7b8-0bbfaaacc82d --view-object-type action --view-id 86146431-5e46-43e9-afa5-c7c54827d552 --object-id 202c347d-fd8a-4f11-8c83-677bb7c3e27c",
+		Example: "  cli pin-view-record --team-id c22ee78c-f1a8-4032-a7b8-0bbfaaacc82d --view-object-type action --view-id 86146431-5e46-43e9-afa5-c7c54827d552 --object-id 202c347d-fd8a-4f11-8c83-677bb7c3e27c",
+		Args:    cobra.NoArgs,
 		RunE:    runPinViewRecordCmd,
 		Aliases: []string{"pvr"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "pinViewRecord",
+		},
 	}
 	flagutil.RegisterFlags(cmd, pinViewRecordCmdMeta)
 	if err := flagutil.ValidateMeta[operations.PinViewRecordRequest](pinViewRecordCmdMeta); err != nil {
@@ -44,14 +47,9 @@ func runPinViewRecordCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, pinViewRecordCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, pinViewRecordCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.PinViewRecordRequest](cmd, pinViewRecordCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
