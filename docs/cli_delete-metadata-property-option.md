@@ -13,7 +13,7 @@ cli delete-metadata-property-option [flags]
 ### Examples
 
 ```
-  cli SDK delete-metadata-property-option --team-id 93dec671-06ab-450d-9647-d684bc5aed13 --object-type deal --property-id 9e2daa26-45cb-4137-a8c8-d47e2bceddfc --option-id b1d01ebf-1389-40fb-bc05-f6cc721c2b82 --type ref_organization_user
+  cli delete-metadata-property-option --team-id 93dec671-06ab-450d-9647-d684bc5aed13 --object-type deal --property-id 9e2daa26-45cb-4137-a8c8-d47e2bceddfc --option-id b1d01ebf-1389-40fb-bc05-f6cc721c2b82 --type ref_organization_user
 ```
 
 ### Options
@@ -21,7 +21,7 @@ cli delete-metadata-property-option [flags]
 ```
   -h, --help                 help for delete-metadata-property-option
   -l, --list-id string       string value
-      --object-type string   options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
+      --object-type string   options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]
       --option-id string     [required]
   -p, --property-id string   [required]
       --team-id string       [required]
@@ -31,16 +31,18 @@ cli delete-metadata-property-option [flags]
 ### Options inherited from parent commands
 
 ```
-      --agent-mode             Enable structured errors and default TOON output for AI coding agents. Automatically enabled when a known agent environment is detected (CLAUDE_CODE, CURSOR_AGENT, etc.). Use --agent-mode=false to disable.
+      --agent-mode             Enable structured errors and default TOON output for AI coding agents. Automatically enabled when a known agent environment is detected (CLAUDECODE, CURSOR_AGENT, etc.). Use --agent-mode=false to disable.
       --api-key x-api-key      Public API key generated from Micro settings. Sent as the x-api-key header and validated by AWS API Gateway in front of the service.
       --color string           Control colored output: auto (color when output is a TTY), always, or never. Respects NO_COLOR and FORCE_COLOR env vars. (default "auto")
   -d, --debug                  Log request and response diagnostics to stderr
-      --dry-run                Preview the request that would be sent without executing it (output to stderr)
+      --dry-run                Preview API requests without sending them (no network, no OS keychain). Human preview on stderr; with -o json or --jq, one JSON object per request on stdout. Local mutation commands (auth login, auth logout and configure) make no request: they skip prompts and writes and report a no-op (stderr, or one JSON object on stdout in the machine form)
   -H, --header stringArray     Set a custom HTTP request header (format: "Key: Value"). Can be specified multiple times.
       --include-headers        Include HTTP response headers in the output
+      --interactive            Prompt for missing inputs and open guided configure/auth forms (forms fall back to line prompts on stdin off-TTY) (default true)
   -q, --jq string              Filter and transform output using a jq expression (e.g., '.name', '.items[] | .id')
       --no-interactive         Disable all interactive features (auto-prompting, explorer auto-launch, TUI forms)
   -o, --output-format string   Specify the output format. Options: pretty, json, yaml, table, toon. (default "pretty")
+      --raw-output             Write --jq string results as raw text instead of JSON strings (like jq -r); non-string results stay JSON
       --server string          Select a server by index (for indexed servers) or name (for named servers)
       --server-url string      Override the default server URL
       --timeout string         HTTP request timeout (e.g., 30s, 5m, 100ms)
@@ -50,3 +52,12 @@ cli delete-metadata-property-option [flags]
 ### SEE ALSO
 
 * [cli](cli.md)	 - cli command-line interface
+
+### Machine interface
+
+* `cli delete-metadata-property-option --usage` — this command's flags, defaults and env vars as machine-readable KDL
+* `cli delete-metadata-property-option --dry-run` — preview the request without OS-keychain access or a network call (human preview on stderr)
+* `--dry-run --output-format json` (or a caller-explicit `--jq`) writes one preview object per request as NDJSON on stdout; jq is not applied to previews
+* `--output-format json` or `--jq <expr>` for machine-readable live output; in agent mode errors are a JSON envelope on stderr
+
+Exit codes: 0 ok · 1 runtime · 2 usage · 3 authentication/authorization

@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,11 +14,11 @@ import (
 
 var listViewRecordsCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "cursor", Shorthand: "c", FieldPath: "Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Opaque cursor from a previous response's `next_cursor`. Pass it back unchanged to fetch the next page. When set, `page` and `limit` are derived from the cursor."},
-	{FlagName: "page", Shorthand: "p", FieldPath: "Page", Kind: flagutil.FlagKindInt64, Optional: true, Description: "Page number (1-based). Prefer `cursor`."},
-	{FlagName: "limit", Shorthand: "l", FieldPath: "Limit", Kind: flagutil.FlagKindInt64, Optional: true, Description: "integer value"},
+	{FlagName: "page", Shorthand: "p", FieldPath: "Page", Kind: flagutil.FlagKindInt64, Optional: true, HasMinimum: true, Minimum: 1, Description: "Page number (1-based). Prefer `cursor`."},
+	{FlagName: "limit", Shorthand: "l", FieldPath: "Limit", Kind: flagutil.FlagKindInt64, Optional: true, HasMinimum: true, Minimum: 0, HasMaximum: true, Maximum: 50, Description: "integer value"},
 }
 
 // initListViewRecordsCmd initializes the list-view-records command.
@@ -28,9 +27,13 @@ func initListViewRecordsCmd(parent *cobra.Command) error {
 		Use:     "list-view-records",
 		Short:   "List records selected by a view (filters and sorts applied; pinned record_order overlaid first)",
 		Long:    "List records selected by a view (filters and sorts applied; pinned record_order overlaid first)",
-		Example: "  cli SDK list-view-records --team-id 5f478bf6-b37b-450e-9850-7b22e98c2777 --view-object-type action --view-id 7872a70f-a77f-401e-8bea-203dc7aa1e06",
+		Example: "  cli list-view-records --team-id 5f478bf6-b37b-450e-9850-7b22e98c2777 --view-object-type action --view-id 7872a70f-a77f-401e-8bea-203dc7aa1e06",
+		Args:    cobra.NoArgs,
 		RunE:    runListViewRecordsCmd,
 		Aliases: []string{"lvr"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "listViewRecords",
+		},
 	}
 	flagutil.RegisterFlags(cmd, listViewRecordsCmdMeta)
 	if err := flagutil.ValidateMeta[operations.ListViewRecordsRequest](listViewRecordsCmdMeta); err != nil {
@@ -45,14 +48,9 @@ func runListViewRecordsCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, listViewRecordsCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, listViewRecordsCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.ListViewRecordsRequest](cmd, listViewRecordsCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

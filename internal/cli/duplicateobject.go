@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,9 +14,9 @@ import (
 
 var duplicateObjectCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 }
 
 // initDuplicateObjectCmd initializes the duplicate-object command.
@@ -26,9 +25,13 @@ func initDuplicateObjectCmd(parent *cobra.Command) error {
 		Use:     "duplicate-object",
 		Short:   "Duplicate object",
 		Long:    "Duplicate object",
-		Example: "  cli SDK duplicate-object --team-id 32e05ddc-57d8-4b8e-8e51-79fd11575fd3 --object-type identity --object-id ff654d6c-99d3-44f2-b2af-83cb139c0e56",
+		Example: "  cli duplicate-object --team-id 32e05ddc-57d8-4b8e-8e51-79fd11575fd3 --object-type identity --object-id ff654d6c-99d3-44f2-b2af-83cb139c0e56",
+		Args:    cobra.NoArgs,
 		RunE:    runDuplicateObjectCmd,
 		Aliases: []string{"dob"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "duplicateObject",
+		},
 	}
 	flagutil.RegisterFlags(cmd, duplicateObjectCmdMeta)
 	if err := flagutil.ValidateMeta[operations.DuplicateObjectRequest](duplicateObjectCmdMeta); err != nil {
@@ -43,14 +46,9 @@ func runDuplicateObjectCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, duplicateObjectCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, duplicateObjectCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.DuplicateObjectRequest](cmd, duplicateObjectCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

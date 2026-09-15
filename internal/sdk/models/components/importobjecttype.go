@@ -10,11 +10,13 @@ import (
 type ImportObjectType string
 
 const (
+	ImportObjectTypeComment      ImportObjectType = "comment"
 	ImportObjectTypeIdentity     ImportObjectType = "identity"
 	ImportObjectTypeOrganization ImportObjectType = "organization"
 	ImportObjectTypeContact      ImportObjectType = "contact"
 	ImportObjectTypeAction       ImportObjectType = "action"
 	ImportObjectTypeDocument     ImportObjectType = "document"
+	ImportObjectTypeEngagement   ImportObjectType = "engagement"
 	ImportObjectTypeDeal         ImportObjectType = "deal"
 )
 
@@ -27,6 +29,8 @@ func (e *ImportObjectType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch v {
+	case "comment":
+		fallthrough
 	case "identity":
 		fallthrough
 	case "organization":
@@ -36,6 +40,8 @@ func (e *ImportObjectType) UnmarshalJSON(data []byte) error {
 	case "action":
 		fallthrough
 	case "document":
+		fallthrough
+	case "engagement":
 		fallthrough
 	case "deal":
 		*e = ImportObjectType(v)

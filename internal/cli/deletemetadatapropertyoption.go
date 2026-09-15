@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var deleteMetadataPropertyOptionCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "property-id", Shorthand: "p", FieldPath: "PropertyID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "option-id", FieldPath: "OptionID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "type", FieldPath: "Type", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"num", "str", "bool", "date", "text", "byte", "select_str", "multi_str", "multiselect_str", "jsonb", "ref_identity", "ref_user", "ref_organization", "ref_organization_user", "ref_contact", "ref_thread", "ref_message", "ref_event", "ref_account", "multiref_ai_chat_message", "multiref_action", "multiref_contact", "multiref_label", "multiref_thread", "multiref_messages", "multiref_document", "multiref_identity", "multiref_organization", "multiref_organization_user", "multiref_engagement", "multiref_attendee", "multiref_meeting_entry", "multiref_read_receipt", "multiref_account"}, Description: "Storage type for a property definition. (options: num, str, bool, date, text, byte, select_str, multi_str, multiselect_str, jsonb, ref_identity, ref_user, ref_organization, ref_organization_user, ref_contact, ref_thread, ref_message, ref_event, ref_account, multiref_ai_chat_message, multiref_action, multiref_contact, multiref_label, multiref_thread, multiref_messages, multiref_document, multiref_identity, multiref_organization, multiref_organization_user, multiref_engagement, multiref_attendee, multiref_meeting_entry, multiref_read_receipt, multiref_account) [required]"},
@@ -28,9 +27,13 @@ func initDeleteMetadataPropertyOptionCmd(parent *cobra.Command) error {
 		Use:     "delete-metadata-property-option",
 		Short:   "Delete a property option",
 		Long:    "Delete a property option",
-		Example: "  cli SDK delete-metadata-property-option --team-id 93dec671-06ab-450d-9647-d684bc5aed13 --object-type deal --property-id 9e2daa26-45cb-4137-a8c8-d47e2bceddfc --option-id b1d01ebf-1389-40fb-bc05-f6cc721c2b82 --type ref_organization_user",
+		Example: "  cli delete-metadata-property-option --team-id 93dec671-06ab-450d-9647-d684bc5aed13 --object-type deal --property-id 9e2daa26-45cb-4137-a8c8-d47e2bceddfc --option-id b1d01ebf-1389-40fb-bc05-f6cc721c2b82 --type ref_organization_user",
+		Args:    cobra.NoArgs,
 		RunE:    runDeleteMetadataPropertyOptionCmd,
 		Aliases: []string{"dmpo"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "deleteMetadataPropertyOption",
+		},
 	}
 	flagutil.RegisterFlags(cmd, deleteMetadataPropertyOptionCmdMeta)
 	if err := flagutil.ValidateMeta[operations.DeleteMetadataPropertyOptionRequest](deleteMetadataPropertyOptionCmdMeta); err != nil {
@@ -45,14 +48,9 @@ func runDeleteMetadataPropertyOptionCmd(cmd *cobra.Command, args []string) error
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, deleteMetadataPropertyOptionCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, deleteMetadataPropertyOptionCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.DeleteMetadataPropertyOptionRequest](cmd, deleteMetadataPropertyOptionCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

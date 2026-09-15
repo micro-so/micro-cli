@@ -9,25 +9,44 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 	"openapi/internal/config"
-	"openapi/internal/output"
+	"openapi/internal/flagutil"
+	"openapi/internal/interactive"
 	"os"
 )
 
 // initAuthCmd registers the auth command group with login, whoami, and logout subcommands.
 func initAuthCmd(parent *cobra.Command) error {
-	authCmd := &cobra.Command{
-		Use:   "auth",
-		Short: "Manage authentication credentials",
-		Long: `Manage authentication credentials for cli.
+	var authCmd *cobra.Command
+	for _, existing := range parent.Commands() {
+		if existing.Name() == "auth" || existing.HasAlias("auth") {
+			authCmd = existing
+			break
+		}
+	}
+	if authCmd == nil {
+		authCmd = &cobra.Command{
+			Use:   "auth",
+			Short: "Manage authentication credentials",
+			Long: `Manage authentication credentials for cli.
 
 Subcommands:
   login   - Interactively configure credentials
   whoami  - Display current authentication status
   logout  - Clear all stored credentials`,
+		}
+		parent.AddCommand(authCmd)
 	}
-	parent.AddCommand(authCmd)
 
-	authCmd.AddCommand(&cobra.Command{
+	addAuthSubcommand := func(sub *cobra.Command) {
+		for _, existing := range authCmd.Commands() {
+			if existing.Name() == sub.Name() || existing.HasAlias(sub.Name()) {
+				return
+			}
+		}
+		authCmd.AddCommand(sub)
+	}
+
+	addAuthSubcommand(&cobra.Command{
 		Use:   "login",
 		Short: "Interactively configure authentication credentials",
 		Long: `Interactively configure authentication credentials for cli.
@@ -36,10 +55,11 @@ with a config file fallback.
 
 All fields are optional — press Enter to skip any field you don't need.
 Use the configure command for both authentication and global parameters.`,
+		Args: cobra.NoArgs,
 		RunE: runAuthLoginCmd,
 	})
 
-	authCmd.AddCommand(&cobra.Command{
+	addAuthSubcommand(&cobra.Command{
 		Use:   "whoami",
 		Short: "Display current authentication configuration",
 		Long: `Display the currently configured settings and their sources.
@@ -52,15 +72,17 @@ Sources are shown as:
   [unset]   - Not configured
 
 Credential values are masked for security.`,
+		Args: cobra.NoArgs,
 		RunE: runWhoamiCmd,
 	})
 
-	authCmd.AddCommand(&cobra.Command{
+	addAuthSubcommand(&cobra.Command{
 		Use:   "logout",
 		Short: "Clear all stored authentication credentials",
 		Long: `Clear all stored authentication credentials from both the OS keychain and config file.
 
 This removes all credentials previously set via auth login or configure.`,
+		Args: cobra.NoArgs,
 		RunE: runAuthLogoutCmd,
 	})
 
@@ -69,54 +91,43 @@ This removes all credentials previously set via auth login or configure.`,
 
 // runAuthLoginCmd executes the auth login command using huh forms.
 func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
-	// Agent mode: reject interactive auth login — agents should use env vars/flags.
-	if output.IsAgentMode() {
-		return output.AgentModeError(cmd,
-			"auth_login_blocked",
-			"the 'auth login' command is interactive and cannot be used in agent mode",
-			[]string{
-				fmt.Sprintf("Set credentials via environment variables (prefix: %s_)", "CLI"),
-				"Pass credentials directly as CLI flags for each command",
-				fmt.Sprintf("Run '%s auth whoami' to verify current authentication", "cli"),
-			},
-		)
+	if dryRunLocalNoop(cmd, "auth login changes local credentials only (no API request); nothing was changed.") {
+		return nil
 	}
-
 	cfg := config.GetConfig()
 	if cfg == nil {
 		cfg = &config.Config{}
 	}
 
-	if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
+	keychainStored := false
+	formMode := interactive.Resolve(cmd).FormMode()
+
+	if formMode == interactive.FormOff {
 		// Non-interactive: store any explicitly-set flags without prompting
 		changed := false
 		if f := cmd.Flags().Lookup("api-key"); f != nil && f.Changed {
 			v, _ := cmd.Flags().GetString("api-key")
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", v); err != nil {
-					cfg.Security.ApiKey = v // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = v // no keyring, store in config
+			if config.StoreSecret("api-key", v, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 			changed = true
 		}
 
 		if !changed {
-			return fmt.Errorf("no flags provided; use flags to set credentials non-interactively, or remove --no-interactive")
+			return flagutil.WithCLIValidation(fmt.Errorf("no flags provided; use flags to store credentials in %s, or pass --interactive to open the form", config.GetConfigPath()))
 		}
 	} else {
 
 		var authApiKey string
 
-		accessible := !authIsInteractive(cmd)
+		accessible := formMode == interactive.FormAccessible
 
 		fields := []huh.Field{
 			huh.NewInput().
 				Title("Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.").
 				Description("--api-key").
 				EchoMode(huh.EchoModePassword).
-				Placeholder(maskSecret(cfg.Security.ApiKey)).
+				Placeholder(maskSecret(config.GetStoredSecret("api-key", cfg.Security.ApiKey))).
 				Value(&authApiKey),
 		}
 
@@ -131,12 +142,8 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		if authApiKey != "" {
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", authApiKey); err != nil {
-					cfg.Security.ApiKey = authApiKey // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = authApiKey // no keyring, store in config
+			if config.StoreSecret("api-key", authApiKey, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 		}
 
@@ -146,8 +153,8 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save configuration: %w", err)
 	}
 
-	out := cmd.OutOrStderr()
-	if config.KeyringAvailable() {
+	out := cmd.OutOrStdout()
+	if keychainStored {
 		fmt.Fprintln(out, "Secret credentials stored in OS keychain")
 	}
 	fmt.Fprintf(out, "Configuration saved to %s\n", config.GetConfigPath())
@@ -156,6 +163,9 @@ func runAuthLoginCmd(cmd *cobra.Command, args []string) error {
 
 // runAuthLogoutCmd clears all stored authentication credentials.
 func runAuthLogoutCmd(cmd *cobra.Command, args []string) error {
+	if dryRunLocalNoop(cmd, "auth logout removes local credentials only (no API request); nothing was changed.") {
+		return nil
+	}
 	cfg := config.GetConfig()
 	if cfg == nil {
 		cfg = &config.Config{}
@@ -174,19 +184,6 @@ func runAuthLogoutCmd(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(out, "All authentication credentials have been cleared.")
 	fmt.Fprintf(out, "Configuration saved to %s\n", config.GetConfigPath())
 	return nil
-}
-
-// authIsInteractive returns true when the auth command should use rich TUI forms.
-// When false, huh falls back to accessible text prompts (line-by-line stdin/stdout).
-// Agent mode forces accessible mode — agents should never see TUI rendering.
-func authIsInteractive(cmd *cobra.Command) bool {
-	if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
-		return false
-	}
-	if output.IsAgentMode() {
-		return false
-	}
-	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
 
 // authFormTheme builds the form theme for auth login.
