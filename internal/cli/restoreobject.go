@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,9 +14,9 @@ import (
 
 var restoreObjectCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 }
 
 // initRestoreObjectCmd initializes the restore-object command.
@@ -26,9 +25,13 @@ func initRestoreObjectCmd(parent *cobra.Command) error {
 		Use:     "restore-object",
 		Short:   "Restore object",
 		Long:    "Restore object",
-		Example: "  cli SDK restore-object --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192",
+		Example: "  cli restore-object --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192",
+		Args:    cobra.NoArgs,
 		RunE:    runRestoreObjectCmd,
 		Aliases: []string{"ro"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "restoreObject",
+		},
 	}
 	flagutil.RegisterFlags(cmd, restoreObjectCmdMeta)
 	if err := flagutil.ValidateMeta[operations.RestoreObjectRequest](restoreObjectCmdMeta); err != nil {
@@ -43,14 +46,9 @@ func runRestoreObjectCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, restoreObjectCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, restoreObjectCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.RestoreObjectRequest](cmd, restoreObjectCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

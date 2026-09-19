@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var deleteObjectCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "if-match", Shorthand: "i", FieldPath: "IfMatch", Kind: flagutil.FlagKindString, Optional: true, Description: "Optimistic concurrency. Pass back the `etag` header from a previous GET of this record; the write only proceeds if the record hasn't changed since. Mismatch → 412 `precondition_failed`. Use `*` to require the record exists (any ETag accepted)."},
 }
@@ -26,9 +25,13 @@ func initDeleteObjectCmd(parent *cobra.Command) error {
 		Use:     "delete-object",
 		Short:   "Delete object",
 		Long:    "Delete object",
-		Example: "  cli SDK delete-object --team-id bb39ef04-8bee-4878-ba38-a537fd6e67c5 --object-type identity --object-id 2096d92b-1e2d-475e-b442-7992f9161602",
+		Example: "  cli delete-object --team-id bb39ef04-8bee-4878-ba38-a537fd6e67c5 --object-type identity --object-id 2096d92b-1e2d-475e-b442-7992f9161602",
+		Args:    cobra.NoArgs,
 		RunE:    runDeleteObjectCmd,
 		Aliases: []string{"do"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "deleteObject",
+		},
 	}
 	flagutil.RegisterFlags(cmd, deleteObjectCmdMeta)
 	if err := flagutil.ValidateMeta[operations.DeleteObjectRequest](deleteObjectCmdMeta); err != nil {
@@ -43,14 +46,9 @@ func runDeleteObjectCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, deleteObjectCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, deleteObjectCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.DeleteObjectRequest](cmd, deleteObjectCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

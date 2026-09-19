@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var getMetadataPropertiesByObjectTypeCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "list-id", Shorthand: "l", FieldPath: "ListID", Kind: flagutil.FlagKindString, Optional: true, Description: "Scope properties to a specific list/app."},
 	{FlagName: "autofill", Shorthand: "a", FieldPath: "Autofill", Kind: flagutil.FlagKindBool, Optional: true, Description: "boolean flag"},
 	{FlagName: "term", FieldPath: "Term", Kind: flagutil.FlagKindString, Optional: true, Description: "string value"},
@@ -27,9 +26,13 @@ func initGetMetadataPropertiesByObjectTypeCmd(parent *cobra.Command) error {
 		Use:     "get-metadata-properties-by-object-type",
 		Short:   "Get metadata properties by object type",
 		Long:    "Get metadata properties by object type",
-		Example: "  cli SDK get-metadata-properties-by-object-type --team-id ac306c5b-0e6e-40ac-9717-2cd3d2b051c3 --object-type ai_chat_thread",
+		Example: "  cli get-metadata-properties-by-object-type --team-id ac306c5b-0e6e-40ac-9717-2cd3d2b051c3 --object-type ai_chat_thread",
+		Args:    cobra.NoArgs,
 		RunE:    runGetMetadataPropertiesByObjectTypeCmd,
 		Aliases: []string{"gmpbot"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getMetadataPropertiesByObjectType",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getMetadataPropertiesByObjectTypeCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetMetadataPropertiesByObjectTypeRequest](getMetadataPropertiesByObjectTypeCmdMeta); err != nil {
@@ -44,14 +47,9 @@ func runGetMetadataPropertiesByObjectTypeCmd(cmd *cobra.Command, args []string) 
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getMetadataPropertiesByObjectTypeCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getMetadataPropertiesByObjectTypeCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.GetMetadataPropertiesByObjectTypeRequest](cmd, getMetadataPropertiesByObjectTypeCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

@@ -31,9 +31,13 @@ generation:
     generateNewTests: true
     skipResponseBodyAssertions: false
 cli:
-  version: 0.0.1
+  version: 0.1.0
   additionalDependencies: {}
+  agentEnvironmentDetection: true
+  classifiedErrors: false
   cliName: cli
+  defaultColor: auto
+  defaultTimeout: ""
   distribution:
     homebrew:
       enabled: false
@@ -53,6 +57,8 @@ cli:
   enableCustomCodeRegions: false
   envVarPrefix: CLI
   generateRelease: true
+  helpStyle: auto
+  idiomaticMethodCollisionNames: false
   imports:
     option: openapi
     paths:
@@ -62,6 +68,7 @@ cli:
       shared: models/components
       webhooks: models/webhooks
   interactiveAuth: true
+  interactiveByDefault: true
   interactiveMode: true
   interactiveTheme:
     accentColor: '#38BDF8'
@@ -69,5 +76,9 @@ cli:
     errorColor: '#F87171'
     subtleColor: '#475569'
     successColor: '#4ADE80'
+  jqRawOutput: false
   packageName: openapi
   removeStutter: true
+  retryFlagsVisibility: visible
+  retryMethodPolicy: spec
+  serverSelectionFlag: visible

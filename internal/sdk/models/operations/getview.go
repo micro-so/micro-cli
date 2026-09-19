@@ -125,6 +125,7 @@ func (u GetViewResponseBody) IsUnknown() bool {
 }
 
 func (u *GetViewResponseBody) UnmarshalJSON(data []byte) error {
+	*u = GetViewResponseBody{}
 
 	var candidates []utils.UnionCandidate
 

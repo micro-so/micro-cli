@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,8 +14,8 @@ import (
 
 var batchDeleteObjectsCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
-	{FlagName: "idempotency-key", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "idempotency-key", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 	{FlagName: "ids", FieldPath: "Body.Ids", Kind: flagutil.FlagKindStringArray, Required: true, Description: "[required]"},
 }
 
@@ -26,15 +25,26 @@ func initBatchDeleteObjectsCmd(parent *cobra.Command) error {
 		Use:     "batch-delete-objects",
 		Short:   "Bulk delete records (partial success)",
 		Long:    "Soft-delete up to 100 records in a single call. Same partial-success contract as batch/update.",
-		Example: "  cli SDK batch-delete-objects --team-id 95aef178-55b0-4a28-a504-e7907ae2bb78 --object-type action --ids '[]'",
+		Example: "  cli batch-delete-objects --team-id 95aef178-55b0-4a28-a504-e7907ae2bb78 --object-type action --ids '[]'",
+		Args:    cobra.NoArgs,
 		RunE:    runBatchDeleteObjectsCmd,
 		Aliases: []string{"bdo"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "batchDeleteObjects",
+		},
 	}
 	flagutil.RegisterFlags(cmd, batchDeleteObjectsCmdMeta)
 	if err := flagutil.ValidateMeta[operations.BatchDeleteObjectsRequest](batchDeleteObjectsCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for batch-delete-objects: %w", err)
 	}
-	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin.")
+	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin; @path reads a file, @- reads stdin to EOF. Use --schema to print the exact JSON Schema.")
+	_ = flagutil.AnnotatePromptFlag(cmd, "body", flagutil.PromptFlagSpec{Kind: "json", BodyFlag: true})
+	cmd.Annotations[flagutil.AnnotationWholeBodyFlag] = "body"
+	if err := flagutil.AnnotateBodyFields(cmd, batchDeleteObjectsCmdMeta, "Body", "body"); err != nil {
+		return fmt.Errorf("annotate body fields for batch-delete-objects: %w", err)
+	}
+	cmd.Flags().Bool("schema", false, "Print the exact JSON Schema of the request body and exit")
+	_ = flagutil.AnnotatePromptFlag(cmd, "schema", flagutil.PromptFlagSpec{Kind: "bool", DocSurface: true})
 	parent.AddCommand(cmd)
 	return nil
 }
@@ -44,14 +54,12 @@ func runBatchDeleteObjectsCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, batchDeleteObjectsCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, batchDeleteObjectsCmdMeta); err != nil {
-			return err
-		}
+	if requested, _ := cmd.Flags().GetBool("schema"); requested {
+		return usage.EmitBodySchema(cmd.OutOrStdout(), "batchDeleteObjects")
 	}
 	req, err := flagutil.BuildRequest[operations.BatchDeleteObjectsRequest](cmd, batchDeleteObjectsCmdMeta, "Body", "body")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

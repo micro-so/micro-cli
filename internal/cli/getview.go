@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,12 +14,12 @@ import (
 
 var getViewCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "include", Shorthand: "i", FieldPath: "Include", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated list of optional sub-resources to inline. Currently the only recognized value is `records` — when present, the response is `{view, records}` rather than the bare view bundle."},
 	{FlagName: "cursor", Shorthand: "c", FieldPath: "Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Forwarded to the records sub-resource when `include=records`."},
-	{FlagName: "page", Shorthand: "p", FieldPath: "Page", Kind: flagutil.FlagKindInt64, Optional: true, Description: "Forwarded to the records sub-resource when `include=records`."},
-	{FlagName: "limit", Shorthand: "l", FieldPath: "Limit", Kind: flagutil.FlagKindInt64, Optional: true, Description: "Forwarded to the records sub-resource when `include=records`."},
+	{FlagName: "page", Shorthand: "p", FieldPath: "Page", Kind: flagutil.FlagKindInt64, Optional: true, HasMinimum: true, Minimum: 1, Description: "Forwarded to the records sub-resource when `include=records`."},
+	{FlagName: "limit", Shorthand: "l", FieldPath: "Limit", Kind: flagutil.FlagKindInt64, Optional: true, HasMinimum: true, Minimum: 0, HasMaximum: true, Maximum: 50, Description: "Forwarded to the records sub-resource when `include=records`."},
 }
 
 // initGetViewCmd initializes the get-view command.
@@ -29,9 +28,13 @@ func initGetViewCmd(parent *cobra.Command) error {
 		Use:     "get-view",
 		Short:   "Read a view bundle",
 		Long:    "Returns the view bundle. Pass `?include=records` to also fetch a page of records selected by the view in the same call; the response is then wrapped as `{view, records}`.",
-		Example: "  cli SDK get-view --team-id 7bebae29-5ec2-496d-a371-a1740b2f29af --view-object-type event --view-id 4496fc81-b665-4ab2-b9ed-e7580819f8bc",
+		Example: "  cli get-view --team-id 7bebae29-5ec2-496d-a371-a1740b2f29af --view-object-type event --view-id 4496fc81-b665-4ab2-b9ed-e7580819f8bc",
+		Args:    cobra.NoArgs,
 		RunE:    runGetViewCmd,
 		Aliases: []string{"gv"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getView",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getViewCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetViewRequest](getViewCmdMeta); err != nil {
@@ -46,14 +49,9 @@ func runGetViewCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getViewCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getViewCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.GetViewRequest](cmd, getViewCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
