@@ -192,6 +192,7 @@ func (u GrantRequestUnion) IsUnknown() bool {
 }
 
 func (u *GrantRequestUnion) UnmarshalJSON(data []byte) error {
+	*u = GrantRequestUnion{}
 
 	var candidates []utils.UnionCandidate
 

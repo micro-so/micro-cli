@@ -7,18 +7,17 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
 )
 
 var patchMetadataPropertyOptionCmdMeta = []flagutil.FlagMeta{
-	{FlagName: "team-id", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "property-id", Shorthand: "p", FieldPath: "PropertyID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "option-id", FieldPath: "OptionID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "idempotency-key", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "idempotency-key", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 	{FlagName: "type", FieldPath: "Body.Type", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"num", "str", "bool", "date", "text", "byte", "select_str", "multi_str", "multiselect_str", "jsonb", "ref_identity", "ref_user", "ref_organization", "ref_organization_user", "ref_contact", "ref_thread", "ref_message", "ref_event", "ref_account", "multiref_ai_chat_message", "multiref_action", "multiref_contact", "multiref_label", "multiref_thread", "multiref_messages", "multiref_document", "multiref_identity", "multiref_organization", "multiref_organization_user", "multiref_engagement", "multiref_attendee", "multiref_meeting_entry", "multiref_read_receipt", "multiref_account"}, Description: "Storage type for a property definition. (options: num, str, bool, date, text, byte, select_str, multi_str, multiselect_str, jsonb, ref_identity, ref_user, ref_organization, ref_organization_user, ref_contact, ref_thread, ref_message, ref_event, ref_account, multiref_ai_chat_message, multiref_action, multiref_contact, multiref_label, multiref_thread, multiref_messages, multiref_document, multiref_identity, multiref_organization, multiref_organization_user, multiref_engagement, multiref_attendee, multiref_meeting_entry, multiref_read_receipt, multiref_account) [required]"},
 	{FlagName: "list-id", Shorthand: "l", FieldPath: "Body.ListID", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"list_id,omitempty"`, Description: "string value"},
 	{FlagName: "value", Shorthand: "v", FieldPath: "Body.Value", Kind: flagutil.FlagKindString, Optional: true, Description: "string value"},
@@ -37,15 +36,26 @@ func initPatchMetadataPropertyOptionCmd(parent *cobra.Command) error {
 		Use:     "patch-metadata-property-option",
 		Short:   "Update a property option",
 		Long:    "Update a property option",
-		Example: "  cli SDK patch-metadata-property-option --team-id e8e78353-372c-4662-9b0e-ce25f7aa085d --object-type deal --property-id 2e0aa9c0-3a10-452e-acf5-5d988bc5985a --option-id f7c352cb-18ee-453a-92a4-94a9bc41a045 --type multiref_attendee",
+		Example: "  cli patch-metadata-property-option --team-id e8e78353-372c-4662-9b0e-ce25f7aa085d --object-type deal --property-id 2e0aa9c0-3a10-452e-acf5-5d988bc5985a --option-id f7c352cb-18ee-453a-92a4-94a9bc41a045 --type multiref_attendee",
+		Args:    cobra.NoArgs,
 		RunE:    runPatchMetadataPropertyOptionCmd,
 		Aliases: []string{"pmpo"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "patchMetadataPropertyOption",
+		},
 	}
 	flagutil.RegisterFlags(cmd, patchMetadataPropertyOptionCmdMeta)
 	if err := flagutil.ValidateMeta[operations.PatchMetadataPropertyOptionRequest](patchMetadataPropertyOptionCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for patch-metadata-property-option: %w", err)
 	}
-	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin.")
+	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin; @path reads a file, @- reads stdin to EOF. Use --schema to print the exact JSON Schema.")
+	_ = flagutil.AnnotatePromptFlag(cmd, "body", flagutil.PromptFlagSpec{Kind: "json", BodyFlag: true})
+	cmd.Annotations[flagutil.AnnotationWholeBodyFlag] = "body"
+	if err := flagutil.AnnotateBodyFields(cmd, patchMetadataPropertyOptionCmdMeta, "Body", "body"); err != nil {
+		return fmt.Errorf("annotate body fields for patch-metadata-property-option: %w", err)
+	}
+	cmd.Flags().Bool("schema", false, "Print the exact JSON Schema of the request body and exit")
+	_ = flagutil.AnnotatePromptFlag(cmd, "schema", flagutil.PromptFlagSpec{Kind: "bool", DocSurface: true})
 	parent.AddCommand(cmd)
 	return nil
 }
@@ -55,14 +65,12 @@ func runPatchMetadataPropertyOptionCmd(cmd *cobra.Command, args []string) error 
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, patchMetadataPropertyOptionCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, patchMetadataPropertyOptionCmdMeta); err != nil {
-			return err
-		}
+	if requested, _ := cmd.Flags().GetBool("schema"); requested {
+		return usage.EmitBodySchema(cmd.OutOrStdout(), "patchMetadataPropertyOption")
 	}
 	req, err := flagutil.BuildRequest[operations.PatchMetadataPropertyOptionRequest](cmd, patchMetadataPropertyOptionCmdMeta, "Body", "body")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,8 +14,8 @@ import (
 
 var createViewCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", Shorthand: "v", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
-	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "view-object-type", Shorthand: "v", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
+	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 	{FlagName: "body-param.id", FieldPath: "Body.ID", Kind: flagutil.FlagKindString, Optional: true, Description: "string value"},
 	{FlagName: "body-param.team-id", FieldPath: "Body.TeamID", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"team_id,omitempty"`, Description: "string value"},
 	{FlagName: "body-param.list-id", FieldPath: "Body.ListID", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"list_id,omitempty"`, Description: "string value"},
@@ -46,15 +45,26 @@ func initCreateViewCmd(parent *cobra.Command) error {
 		Use:     "create-view",
 		Short:   "Create a view bundle (view + select/filter/sort)",
 		Long:    "Create a view bundle (view + select/filter/sort)",
-		Example: "  cli SDK create-view --team-id 408d4e54-e54c-4084-9e93-0fa16e13a37a --view-object-type organization --body-param.name <value> --body-param.view-type <value>",
+		Example: "  cli create-view --team-id 408d4e54-e54c-4084-9e93-0fa16e13a37a --view-object-type organization --body-param.name <value> --body-param.view-type <value>",
+		Args:    cobra.NoArgs,
 		RunE:    runCreateViewCmd,
 		Aliases: []string{"cv"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "createView",
+		},
 	}
 	flagutil.RegisterFlags(cmd, createViewCmdMeta)
 	if err := flagutil.ValidateMeta[operations.CreateViewRequest](createViewCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for create-view: %w", err)
 	}
-	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin.")
+	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin; @path reads a file, @- reads stdin to EOF. Use --schema to print the exact JSON Schema.")
+	_ = flagutil.AnnotatePromptFlag(cmd, "body", flagutil.PromptFlagSpec{Kind: "json", BodyFlag: true})
+	cmd.Annotations[flagutil.AnnotationWholeBodyFlag] = "body"
+	if err := flagutil.AnnotateBodyFields(cmd, createViewCmdMeta, "Body", "body"); err != nil {
+		return fmt.Errorf("annotate body fields for create-view: %w", err)
+	}
+	cmd.Flags().Bool("schema", false, "Print the exact JSON Schema of the request body and exit")
+	_ = flagutil.AnnotatePromptFlag(cmd, "schema", flagutil.PromptFlagSpec{Kind: "bool", DocSurface: true})
 	parent.AddCommand(cmd)
 	return nil
 }
@@ -64,14 +74,12 @@ func runCreateViewCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, createViewCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, createViewCmdMeta); err != nil {
-			return err
-		}
+	if requested, _ := cmd.Flags().GetBool("schema"); requested {
+		return usage.EmitBodySchema(cmd.OutOrStdout(), "createView")
 	}
 	req, err := flagutil.BuildRequest[operations.CreateViewRequest](cmd, createViewCmdMeta, "Body", "body")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

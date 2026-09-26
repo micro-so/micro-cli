@@ -14,7 +14,7 @@ import (
 )
 
 var getMetadataPropertiesCmdMeta = []flagutil.FlagMeta{
-	{FlagName: "team-id", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
+	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "list-id", Shorthand: "l", FieldPath: "ListID", Kind: flagutil.FlagKindString, Optional: true, Description: "Scope properties to a specific list/app."},
 	{FlagName: "autofill", Shorthand: "a", FieldPath: "Autofill", Kind: flagutil.FlagKindBool, Optional: true, Description: "boolean flag"},
 	{FlagName: "term", FieldPath: "Term", Kind: flagutil.FlagKindString, Optional: true, Description: "string value"},
@@ -23,16 +23,28 @@ var getMetadataPropertiesCmdMeta = []flagutil.FlagMeta{
 // initGetMetadataPropertiesCmd initializes the get-metadata-properties command.
 func initGetMetadataPropertiesCmd(parent *cobra.Command) error {
 	var cmd = &cobra.Command{
-		Use:     "get-metadata-properties",
+		Use:     "get-metadata-properties [team-id]",
 		Short:   "Get metadata properties",
 		Long:    "Get metadata properties",
-		Example: "  cli SDK get-metadata-properties --team-id 6c9deea2-be0e-4c08-ab7c-0ad7a92abede",
+		Example: "  cli get-metadata-properties --team-id 6c9deea2-be0e-4c08-ab7c-0ad7a92abede",
+		Args:    flagutil.PositionalFlagArgs,
 		RunE:    runGetMetadataPropertiesCmd,
 		Aliases: []string{"gmp"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getMetadataProperties",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getMetadataPropertiesCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetMetadataPropertiesRequest](getMetadataPropertiesCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for get-metadata-properties: %w", err)
+	}
+	if err := flagutil.DeclarePositionalFlag(cmd, "team-id", "string value (or pass it as the [team-id] argument)", true); err != nil {
+		return err
+	}
+	if err := interactive.Declare(cmd, interactive.CommandSpec{Args: []interactive.ArgSpec{
+		{Name: "team-id", Summary: "string value", Required: true, SatisfiedBy: []string{"team-id"}},
+	}}); err != nil {
+		return fmt.Errorf("declare interactive arguments for get-metadata-properties: %w", err)
 	}
 	parent.AddCommand(cmd)
 	return nil
@@ -43,14 +55,12 @@ func runGetMetadataPropertiesCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getMetadataPropertiesCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getMetadataPropertiesCmdMeta); err != nil {
-			return err
-		}
+	if err := flagutil.ResolvePositionalFlag(cmd, args); err != nil {
+		return err
 	}
 	req, err := flagutil.BuildRequest[operations.GetMetadataPropertiesRequest](cmd, getMetadataPropertiesCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

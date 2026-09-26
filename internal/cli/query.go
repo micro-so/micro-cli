@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,9 +14,9 @@ import (
 
 var queryCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action", "event"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, organization, contact, action, event [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "organization", "contact", "action", "event"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, organization, contact, action, event [required]"},
 	{FlagName: "query", FieldPath: "Body.Query", Kind: flagutil.FlagKindJSON, Required: true, Annotations: `json:"query"`, Description: "[required]"},
-	{FlagName: "cursor", Shorthand: "c", FieldPath: "Body.Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Alternative location for the opaque cursor (sibling of `query`). Use whichever feels more natural; if both are present, `query.cursor` wins."},
+	{FlagName: "cursor", Shorthand: "c", FieldPath: "Body.Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Alternative location for the opaque cursor (a sibling of `query`). Use whichever feels more natural; if both are present, `query.cursor` wins."},
 	{FlagName: "include-total", FieldPath: "Body.IncludeTotal", Kind: flagutil.FlagKindBool, Optional: true, HasDefault: true, Description: "When true, the response includes a `total` field with the unpaginated row count. Costs an additional pass over the result set — for unfiltered totals prefer `GET /v2/prism/{teamId}/{objectType}/count` instead."},
 	{FlagName: "id", FieldPath: "Body.ID", Kind: flagutil.FlagKindUnion, Union: &flagutil.UnionMeta{Discriminated: false, Optional: true, TypeDescription: "JSON value (one of: string | array of string)"}},
 	{FlagName: "deleted", FieldPath: "Body.Deleted", Kind: flagutil.FlagKindBool, Optional: true, Description: "boolean flag"},
@@ -31,14 +30,25 @@ func initQueryCmd(parent *cobra.Command) error {
 		Use:     "query",
 		Short:   "Query",
 		Long:    "Query",
-		Example: "  cli SDK query --team-id e0f153a6-8a1c-46f2-8b7b-338bf5f8256c --object-type document --query '{\"select\":[],\"combinator\":\"AND\"}'",
+		Example: "  cli query --team-id e0f153a6-8a1c-46f2-8b7b-338bf5f8256c --object-type document --query '{\"select\":[],\"combinator\":\"AND\"}'",
+		Args:    cobra.NoArgs,
 		RunE:    runQueryCmd,
+		Annotations: map[string]string{
+			"speakeasy_operation": "query",
+		},
 	}
 	flagutil.RegisterFlags(cmd, queryCmdMeta)
 	if err := flagutil.ValidateMeta[operations.QueryRequest](queryCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for query: %w", err)
 	}
-	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin.")
+	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin; @path reads a file, @- reads stdin to EOF. Use --schema to print the exact JSON Schema.")
+	_ = flagutil.AnnotatePromptFlag(cmd, "body", flagutil.PromptFlagSpec{Kind: "json", BodyFlag: true})
+	cmd.Annotations[flagutil.AnnotationWholeBodyFlag] = "body"
+	if err := flagutil.AnnotateBodyFields(cmd, queryCmdMeta, "Body", "body"); err != nil {
+		return fmt.Errorf("annotate body fields for query: %w", err)
+	}
+	cmd.Flags().Bool("schema", false, "Print the exact JSON Schema of the request body and exit")
+	_ = flagutil.AnnotatePromptFlag(cmd, "schema", flagutil.PromptFlagSpec{Kind: "bool", DocSurface: true})
 	parent.AddCommand(cmd)
 	return nil
 }
@@ -48,14 +58,12 @@ func runQueryCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, queryCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, queryCmdMeta); err != nil {
-			return err
-		}
+	if requested, _ := cmd.Flags().GetBool("schema"); requested {
+		return usage.EmitBodySchema(cmd.OutOrStdout(), "query")
 	}
 	req, err := flagutil.BuildRequest[operations.QueryRequest](cmd, queryCmdMeta, "Body", "body")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

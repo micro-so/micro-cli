@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var deleteViewCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 }
 
@@ -25,9 +24,13 @@ func initDeleteViewCmd(parent *cobra.Command) error {
 		Use:     "delete-view",
 		Short:   "Delete a view bundle",
 		Long:    "Delete a view bundle",
-		Example: "  cli SDK delete-view --team-id fad35233-f5c6-4e04-802c-f84eb6caa2a6 --view-object-type event --view-id ec8b9808-d964-43ef-b1eb-29e2b6a3a8ec",
+		Example: "  cli delete-view --team-id fad35233-f5c6-4e04-802c-f84eb6caa2a6 --view-object-type event --view-id ec8b9808-d964-43ef-b1eb-29e2b6a3a8ec",
+		Args:    cobra.NoArgs,
 		RunE:    runDeleteViewCmd,
 		Aliases: []string{"dv"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "deleteView",
+		},
 	}
 	flagutil.RegisterFlags(cmd, deleteViewCmdMeta)
 	if err := flagutil.ValidateMeta[operations.DeleteViewRequest](deleteViewCmdMeta); err != nil {
@@ -42,14 +45,9 @@ func runDeleteViewCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, deleteViewCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, deleteViewCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.DeleteViewRequest](cmd, deleteViewCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

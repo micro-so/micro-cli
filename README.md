@@ -18,8 +18,9 @@ Command-line interface for the *Prism* API.
   * [CLI Installation](#cli-installation)
   * [Shell Completion](#shell-completion)
   * [CLI Example Usage](#cli-example-usage)
+  * [For AI agents](#for-ai-agents)
   * [Authentication](#authentication)
-  * [Available Commands](#available-commands)
+  * [Commands](#commands)
   * [Request Body Input](#request-body-input)
   * [Output Formats](#output-formats)
   * [Error Handling](#error-handling)
@@ -110,6 +111,108 @@ cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bc
 ```
 <!-- End CLI Example Usage [usage] -->
 
+<!-- Start For AI agents [agents] -->
+## For AI agents
+
+This CLI is built to be driven by AI coding agents as well as people: everything an agent needs is discoverable from the binary itself, and every command can be validated without credentials. Work down this ladder:
+
+| Run | You get |
+|-----|---------|
+| `cli --help`, `cli restore-object --help` | Commands by category, runnable examples, flags |
+| `cli --usage`, `cli restore-object --usage` | The command surface as machine-readable [KDL](https://kdl.dev): commands, aliases, flags, defaults, env vars, config keys |
+| `cli batch-delete-objects --schema` | The exact JSON Schema of the command's request body (all `$ref`s bundled) — build a valid `--body` from it |
+| `cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --dry-run` | The exact HTTP request (method, URL, headers, body), with no credentials or network call |
+| `cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --output-format json` (or `--jq`) | Machine-readable output |
+
+### Discover the command surface
+
+```bash
+# Every command, flag, default, env var and config key, as KDL
+cli --usage
+
+# One command's subtree only
+cli restore-object --usage
+```
+
+### Read the exact request schema
+
+`--schema` is available on every command that accepts a request body (`--body`, stdin, or a whole-body flag where the command has one), including intent commands. It prints the JSON Schema the request is validated against and exits without calling the API.
+
+```bash
+# JSON Schema (draft 2020-12) of the request body, with every $ref bundled under $defs
+cli batch-delete-objects --schema
+```
+
+### Probe before you spend
+
+Start quota-spending commands with `--dry-run`. It validates inputs, resolves the request, redacts secrets and binary payloads, makes no network call, and exits 0. It never reads the OS keychain; credentials supplied by flag, environment, or config file are included only as `[REDACTED]`.
+
+```bash
+# Human preview: the [DRY-RUN] block is on stderr and stdout is empty
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --dry-run
+
+# Machine preview: compact JSON on stdout and silent stderr
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --dry-run --output-format json
+```
+
+The machine form writes one object per would-be request, one per line (NDJSON for multi-request commands), with exactly this shape:
+
+```json
+{"dry_run":true,"request":{"method":"POST","url":"https://…","headers":{"Accept":["application/json"],…},"body":<JSON value | string | null>}}
+```
+
+`body` is a parsed JSON value when the body is JSON, a string for text, `"<bytes:N>"` for binary data, and `null` when absent. An explicit caller `--jq` also selects this JSON preview protocol, but the filter is not applied to preview objects. Command-declared jq presets do not select or filter the preview.
+
+Local mutation commands make no request under `--dry-run`: instead of a preview they emit one `{"dry_run":true,"local":true,"command":"…","message":"…"}` object. `select(.request)` keeps only would-be requests; `select(.local)` keeps the local no-ops.
+
+### Machine-readable output
+
+```bash
+# JSON on stdout
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --output-format json
+
+# Filter or reshape with a jq expression (always emits JSON, overrides --output-format)
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --jq '.'
+
+# Print jq string results as plain text instead of JSON strings (like jq -r)
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --jq '.' --raw-output
+```
+
+`--output-format toon` emits [TOON](https://github.com/toon-format/spec), a compact line-oriented format that uses fewer tokens than JSON; it is the default in agent mode.
+
+### Interactive mode
+Required-input prompts and guided `configure` / `auth login` forms are enabled by default. Required-input prompts require an interactive terminal; off-TTY forms read line input from stdin. Use `--no-interactive` to force flag-only execution.
+
+```bash
+# Prompt for missing command inputs
+cli restore-object --interactive
+
+# Open the guided configuration form
+cli configure --interactive
+
+# Explicitly launch the terminal command explorer
+cli explore
+```
+
+### Agent mode and structured errors
+Agent mode turns on automatically when a known agent environment is detected (`CLAUDECODE`, `CURSOR_AGENT`, `CODEX`, `AIDER`, `CLINE`, `WINDSURF_AGENT`, `GITHUB_COPILOT`, `AMAZON_Q`, `GEMINI_CODE_ASSIST`, `SRC_CODY`) or with `--agent-mode` (`--agent-mode=false` disables detection).
+In agent mode interactive prompts never launch, output defaults to TOON, and every failure — API errors and CLI usage errors alike — is one JSON envelope on stderr:
+Outside agent mode, explicit JSON and `--jq` preserve the compatibility envelope without classification; enable agent mode to request the classified contract.
+
+```json
+{
+  "error": "...",
+  "error_type": "validation_error",
+  "error_reason": "CLI_VALIDATION",
+  "exit_code": 2,
+  "message": "human-readable message",
+  "hints": ["what to try next"]
+}
+```
+
+`error_type` is one of `authentication_error`, `authorization_error`, `not_found`, `validation_error`, `rate_limit_error`, `server_error`, `api_error`, `connection_error`, `protocol_error`, `runtime_error`, `unsupported_error`, `async_failed`, `async_timeout`, `async_unknown_state`. Classification derives from the HTTP status and transport evidence; `error_reason` is absent for API errors. Status-less local failures may use `CLI_VALIDATION`, `CLI_CONNECTION`, `CLI_PROTOCOL`, `CLI_RUNTIME`, `CLI_UNAVAILABLE`, `CLI_AUTHENTICATION`, or the async polling reasons `CLI_ASYNC_FAILED`, `CLI_ASYNC_TIMEOUT`, and `CLI_ASYNC_UNKNOWN_STATE`. `hints` preserves server guidance first, adds the most specific local taxonomy guidance, then typed CLI and command-specific guidance, removing exact duplicates. `exit_code` is always the code for the final `error_type` shown in the envelope: 1 runtime, 2 usage, or 3 authentication/authorization.
+<!-- End For AI agents [agents] -->
+
 <!-- Start Authentication [security] -->
 ## Authentication
 
@@ -120,7 +223,7 @@ Authentication credentials can be configured in four ways (in order of priority)
 Pass credentials directly as flags to any command:
 
 ```bash
-cli --api-key <value> <command> [arguments]
+cli --api-key "$CLI_API_KEY" restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192
 ```
 
 ### 2. Environment variables
@@ -157,8 +260,8 @@ cli configure
 Configuration is stored in `~/.config/cli/config.yaml`.
 <!-- End Authentication [security] -->
 
-<!-- Start Available Commands [operations] -->
-## Available Commands
+<!-- Start Commands [operations] -->
+## Commands
 
 <details open>
 <summary>Available commands</summary>
@@ -198,68 +301,12 @@ Configuration is stored in `~/.config/cli/config.yaml`.
 * [`unpin-view-record`](docs/cli_unpin-view-record.md) - Unpin a record from the view
 
 </details>
-<!-- End Available Commands [operations] -->
+<!-- End Commands [operations] -->
 
 <!-- Start Request Body Input [stdinpiping] -->
 ## Request Body Input
 
-Operations that accept a request body support three input methods, with a clear priority chain:
-
-### Individual flags (highest priority)
-
-```bash
-cli <command> --name "Jane" --age 30
-```
-
-### `--body` flag
-
-Provide the entire request body as a JSON string:
-
-```bash
-cli <command> --body '{"name": "John", "age": 30}'
-```
-
-Individual flags override `--body` values:
-
-```bash
-# Result: {name: "Jane", age: 30}
-cli <command> --body '{"name": "John", "age": 30}' --name "Jane"
-```
-
-### Stdin piping (lowest priority)
-
-Pipe JSON into any command that accepts a request body:
-
-```bash
-echo '{"name": "John", "age": 30}' | cli <command>
-```
-
-Individual flags override stdin values:
-
-```bash
-# Result: {name: "Jane", age: 30}
-echo '{"name": "John", "age": 30}' | cli <command> --name "Jane"
-```
-
-This is useful for chaining commands, reading from files, or scripting:
-
-```bash
-# Read body from a file
-cli <command> < request.json
-
-# Pipe from another command
-curl -s https://example.com/data.json | cli <command>
-```
-
-### Priority
-
-When multiple input methods are used, the priority is:
-
-| Priority | Source | Description |
-|----------|--------|-------------|
-| 1 (highest) | Individual flags | `--name "Jane"` always wins |
-| 2 | `--body` flag | Whole-body JSON via flag |
-| 3 (lowest) | Stdin | Piped JSON input |
+Commands that accept a request body take it three ways, with a clear priority chain: individual field flags (highest priority), the whole body as JSON via `--body`, and JSON piped on stdin (lowest priority). Later sources never override earlier ones; a body-bearing command prints its exact request schema with `--schema`.
 <!-- End Request Body Input [stdinpiping] -->
 
 <!-- Start Output Formats [output-formats] -->
@@ -279,16 +326,16 @@ Every command supports a `--output-format` flag that controls how the response i
 
 ```bash
 # Default pretty output
-cli <command>
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192
 
 # Machine-readable JSON
-cli <command> --output-format json
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --output-format json
 
 # TOON for LLM-friendly compact output
-cli <command> --output-format toon
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --output-format toon
 
 # Pipe JSON to jq without using --output-format
-cli <command> --output-format json | jq '.fieldName'
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --output-format json | jq '.'
 ```
 
 ### jq filtering
@@ -297,10 +344,10 @@ Use `--jq` to filter or transform the response inline using a [jq](https://jqlan
 
 ```bash
 # Extract a single field
-cli <command> --jq '.name'
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --jq '.'
 
-# Filter an array
-cli <command> --jq '.items[] | select(.active == true)'
+# Reshape with any jq program; --raw-output prints string results as plain text (like jq -r)
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --jq '.' --raw-output
 ```
 
 ### Color control
@@ -335,17 +382,20 @@ The CLI uses standard exit codes to indicate success or failure:
 | Exit Code | Meaning |
 |-----------|---------|
 | `0` | Success |
-| `1` | Error (API error, invalid input, etc.) |
+| `1` | Runtime/API failure |
+| `2` | Usage or input failure |
+| `3` | Authentication or authorization failure |
 
 On success, the response data is printed to **stdout** as JSON. On failure, error details are printed to **stderr**.
 
 ```bash
 # Capture output and handle errors
-cli ... > output.json 2> error.log
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --output-format json > output.json 2> error.log
 if [ $? -ne 0 ]; then
   echo "Error occurred, see error.log"
 fi
 ```
+This CLI uses unclassified error rendering outside agent mode: pretty and TOON print the API error text as received, while `--output-format json` and `--jq` emit the unclassified envelope (including the configure `_hint` for HTTP 401/403) plus `exit_code`. Agent mode always emits the classified JSON envelope with `exit_code`, `error_type`, optional `error_reason`, `message`, `hints`, and optional `status_code` — see [For AI agents](#for-ai-agents).
 <!-- End Error Handling [errors] -->
 
 <!-- Start Diagnostics [diagnostics] -->
@@ -358,22 +408,30 @@ The CLI includes two diagnostic flags available on all commands:
 Preview what would be sent without making any network calls:
 
 ```bash
-cli <command> --dry-run
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --dry-run
 ```
 
-Output goes to stderr and includes:
+In human output modes, stdout is empty and the `[DRY-RUN]` block goes to stderr. It includes:
 - HTTP method and URL
 - Request headers (sensitive values redacted)
 - Request body preview (sensitive fields redacted)
 
-The command exits successfully without contacting the API. This is useful for verifying request construction before executing.
+With `--output-format json`, or with a caller-explicit `--jq`, stderr is silent and stdout is NDJSON: one compact preview object per would-be request. The jq filter is not applied, and command-declared jq presets do not select the JSON protocol.
+
+```json
+{"dry_run":true,"request":{"method":"POST","url":"https://…","headers":{"Accept":["application/json"],…},"body":<JSON value | string | null>}}
+```
+
+JSON bodies remain structured; text bodies are strings; binary bodies are `"<bytes:N>"`; absent bodies are `null`. Headers retain all values as arrays, with credentials replaced by `[REDACTED]`. Dry-run never reads the OS keychain, but credentials supplied by flag, environment, or config file still appear redacted. The command exits successfully without contacting the API.
+
+Local mutation commands emit one `{"dry_run":true,"local":true,"command":"…","message":"…"}` object in place of a preview; filter with `select(.request)` or `select(.local)`.
 
 ### Debug
 
 Log request and response diagnostics while running normally:
 
 ```bash
-cli <command> --debug
+cli restore-object --api-key test_api_key --team-id 789f763f-9f96-49ae-adef-08bcc696352d --object-type identity --object-id 2aff55d3-ece9-47d3-8d69-6723ec874192 --debug
 ```
 
 Debug output goes to stderr and includes:
@@ -392,6 +450,8 @@ If both `--dry-run` and `--debug` are set, `--dry-run` takes precedence and no n
 Sensitive information is automatically redacted in diagnostic output:
 - **Headers**: `Authorization`, `Cookie`, `Set-Cookie`, `X-API-Key`, and other security headers show `[REDACTED]`
 - **Body**: JSON fields named `password`, `secret`, `token`, `api_key`, `client_secret`, etc. show `[REDACTED]`
+- **Binary data**: binary media and canonical base64 strings are replaced with `<bytes:N>`
+- **URL query**: credential-like query parameters are replaced with `[REDACTED]`
 
 Diagnostic output should still be treated as potentially sensitive operational data.
 <!-- End Diagnostics [diagnostics] -->

@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,8 +14,8 @@ import (
 
 var importObjectsCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"identity", "organization", "contact", "action", "document", "deal"}, Description: "options: identity, organization, contact, action, document, deal [required]"},
-	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "identity", "organization", "contact", "action", "document", "engagement", "deal"}, Description: "options: comment, identity, organization, contact, action, document, engagement, deal [required]"},
+	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
 	{FlagName: "objects", FieldPath: "Body.Objects", Kind: flagutil.FlagKindJSON, Required: true, Annotations: `json:"objects"`, Description: "Array of objects to import with property values keyed by slug [required]"},
 	{FlagName: "options", FieldPath: "Body.Options", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"options,omitempty"`, Description: "JSON object"},
 }
@@ -27,15 +26,26 @@ func initImportObjectsCmd(parent *cobra.Command) error {
 		Use:     "import-objects",
 		Short:   "Import objects",
 		Long:    "Import multiple objects in batch. Properties are keyed by slug. Automatically routes based on size: small batches complete synchronously and return 200 with the final `ImportJob`; large batches start an async job, return 202 with `status: processing` and a `Location` header, and can be polled via `GET /v2/prism/{teamId}/imports/{jobId}`.",
-		Example: "  cli SDK import-objects --team-id 863ea5b9-7ed4-43bb-82aa-bc5508ef8716 --object-type document --objects '[{\"list\":{} }]'",
+		Example: "  cli import-objects --team-id 863ea5b9-7ed4-43bb-82aa-bc5508ef8716 --object-type document --objects '[{\"list\":{\x7d\x7d]'",
+		Args:    cobra.NoArgs,
 		RunE:    runImportObjectsCmd,
 		Aliases: []string{"io"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "importObjects",
+		},
 	}
 	flagutil.RegisterFlags(cmd, importObjectsCmdMeta)
 	if err := flagutil.ValidateMeta[operations.ImportObjectsRequest](importObjectsCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for import-objects: %w", err)
 	}
-	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin.")
+	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin; @path reads a file, @- reads stdin to EOF. Use --schema to print the exact JSON Schema.")
+	_ = flagutil.AnnotatePromptFlag(cmd, "body", flagutil.PromptFlagSpec{Kind: "json", BodyFlag: true})
+	cmd.Annotations[flagutil.AnnotationWholeBodyFlag] = "body"
+	if err := flagutil.AnnotateBodyFields(cmd, importObjectsCmdMeta, "Body", "body"); err != nil {
+		return fmt.Errorf("annotate body fields for import-objects: %w", err)
+	}
+	cmd.Flags().Bool("schema", false, "Print the exact JSON Schema of the request body and exit")
+	_ = flagutil.AnnotatePromptFlag(cmd, "schema", flagutil.PromptFlagSpec{Kind: "bool", DocSurface: true})
 	parent.AddCommand(cmd)
 	return nil
 }
@@ -45,14 +55,12 @@ func runImportObjectsCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, importObjectsCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, importObjectsCmdMeta); err != nil {
-			return err
-		}
+	if requested, _ := cmd.Flags().GetBool("schema"); requested {
+		return usage.EmitBodySchema(cmd.OutOrStdout(), "importObjects")
 	}
 	req, err := flagutil.BuildRequest[operations.ImportObjectsRequest](cmd, importObjectsCmdMeta, "Body", "body")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {

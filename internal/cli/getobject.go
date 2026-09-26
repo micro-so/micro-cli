@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var getObjectCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "select", Shorthand: "s", FieldPath: "Select", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated property slugs to return. Use dot notation for relationships. `id` is always returned at the top level. Defaults to all properties."},
 }
@@ -26,9 +25,13 @@ func initGetObjectCmd(parent *cobra.Command) error {
 		Use:     "get-object",
 		Short:   "Get object",
 		Long:    "Get object",
-		Example: "  cli SDK get-object --team-id 8376e295-a8cf-4072-a303-3c75424a5f46 --object-type event --object-id 089a27e7-6fc9-4559-bfe1-0d332cda6b98",
+		Example: "  cli get-object --team-id 8376e295-a8cf-4072-a303-3c75424a5f46 --object-type event --object-id 089a27e7-6fc9-4559-bfe1-0d332cda6b98",
+		Args:    cobra.NoArgs,
 		RunE:    runGetObjectCmd,
 		Aliases: []string{"go"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getObject",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getObjectCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetObjectRequest](getObjectCmdMeta); err != nil {
@@ -43,14 +46,9 @@ func runGetObjectCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getObjectCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getObjectCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.GetObjectRequest](cmd, getObjectCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
