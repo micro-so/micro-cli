@@ -33,7 +33,7 @@ generation:
 cli:
   version: 0.0.1
   additionalDependencies: {}
-  cliName: cli
+  cliName: micro-cli
   distribution:
     homebrew:
       enabled: false
@@ -51,7 +51,7 @@ cli:
       publisherUrl: ""
       repositoryOwner: ""
   enableCustomCodeRegions: false
-  envVarPrefix: CLI
+  envVarPrefix: MICRO
   generateRelease: true
   imports:
     option: openapi
