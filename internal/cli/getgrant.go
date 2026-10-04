@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var getGrantCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 }
 
@@ -25,9 +24,13 @@ func initGetGrantCmd(parent *cobra.Command) error {
 		Use:     "get-grant",
 		Short:   "Get grant",
 		Long:    "Get grant",
-		Example: "  cli SDK get-grant --team-id a7c8db69-f631-4797-928a-3af1b86e627e --object-type organization --object-id 888a0c54-4d0a-4136-a6ae-bfb2987d2ed5",
+		Example: "  cli get-grant --team-id a7c8db69-f631-4797-928a-3af1b86e627e --object-type organization --object-id 888a0c54-4d0a-4136-a6ae-bfb2987d2ed5",
+		Args:    cobra.NoArgs,
 		RunE:    runGetGrantCmd,
 		Aliases: []string{"gg"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "getGrant",
+		},
 	}
 	flagutil.RegisterFlags(cmd, getGrantCmdMeta)
 	if err := flagutil.ValidateMeta[operations.GetGrantRequest](getGrantCmdMeta); err != nil {
@@ -42,14 +45,9 @@ func runGetGrantCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, getGrantCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, getGrantCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.GetGrantRequest](cmd, getGrantCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
