@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,7 +14,7 @@ import (
 
 var unpinViewRecordCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 	{FlagName: "object-id", FieldPath: "ObjectID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
 }
@@ -26,9 +25,13 @@ func initUnpinViewRecordCmd(parent *cobra.Command) error {
 		Use:     "unpin-view-record",
 		Short:   "Unpin a record from the view",
 		Long:    "Unpin a record from the view",
-		Example: "  cli SDK unpin-view-record --team-id 6503d82a-a518-4343-ac14-d6ec97fe5b2c --view-object-type document --view-id 15414dcd-d5c0-4917-ac31-2a81fc1c8285 --object-id 6653be40-78a4-4d1d-8358-7989174daeba",
+		Example: "  cli unpin-view-record --team-id 6503d82a-a518-4343-ac14-d6ec97fe5b2c --view-object-type document --view-id 15414dcd-d5c0-4917-ac31-2a81fc1c8285 --object-id 6653be40-78a4-4d1d-8358-7989174daeba",
+		Args:    cobra.NoArgs,
 		RunE:    runUnpinViewRecordCmd,
 		Aliases: []string{"uvr"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "unpinViewRecord",
+		},
 	}
 	flagutil.RegisterFlags(cmd, unpinViewRecordCmdMeta)
 	if err := flagutil.ValidateMeta[operations.UnpinViewRecordRequest](unpinViewRecordCmdMeta); err != nil {
@@ -43,14 +46,9 @@ func runUnpinViewRecordCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, unpinViewRecordCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, unpinViewRecordCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.UnpinViewRecordRequest](cmd, unpinViewRecordCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
