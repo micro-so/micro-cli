@@ -72,6 +72,13 @@ func MarkDryRunRequest(cmd *cobra.Command) {
 	cmd.Annotations[dryRunRequestAnnotation] = "true"
 }
 
+// ClearDryRunRequest resets the request marker before another command execution.
+func ClearDryRunRequest(cmd *cobra.Command) {
+	if cmd != nil {
+		delete(cmd.Annotations, dryRunRequestAnnotation)
+	}
+}
+
 func DidDryRunRequest(cmd *cobra.Command) bool {
 	return cmd != nil && cmd.Annotations[dryRunRequestAnnotation] == "true"
 }
@@ -462,7 +469,6 @@ func WithCLIValidation(err error) error {
 }
 
 type serverURLValidationError struct {
-	value string
 	error
 }
 
@@ -475,12 +481,16 @@ func (serverURLValidationError) CLIHints() []string {
 func (e serverURLValidationError) Unwrap() error { return e.error }
 
 func (e serverURLValidationError) Error() string {
-	return fmt.Sprintf("invalid --server-url %q: %v", e.value, e.error)
+	return fmt.Sprintf("invalid --server-url: %v", e.error)
 }
 
 func ValidateServerURL(value string) error {
-	if _, err := url.Parse(value); err != nil {
-		return serverURLValidationError{value: value, error: err}
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return serverURLValidationError{error: fmt.Errorf("malformed URL; pass an absolute HTTP(S) URL with a host")}
+	}
+	if (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Hostname() == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
+		return serverURLValidationError{error: fmt.Errorf("must be an absolute HTTP(S) URL with a host and no credentials, query, or fragment")}
 	}
 	return nil
 }

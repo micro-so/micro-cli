@@ -23,10 +23,12 @@ import (
 func NewClient(cmd *cobra.Command, allowedSecurityFields ...string) (*sdk.SDK, error) {
 	var sdkOpts []sdk.SDKOption
 	sdkOpts = append(sdkOpts, sdk.WithSecurity(buildGlobalSecurity(cmd, allowedSecurityFields)))
-	if serverURL, _ := flagutil.GetStringFlag(cmd, "server-url"); serverURL != "" {
-		if err := flagutil.ValidateServerURL(serverURL); err != nil {
-			return nil, err
-		}
+	serverURL := resolveStringFlag(cmd, "server-url")
+	if serverURL == "" {
+		serverURL = "https://developers.micro.so"
+	}
+	if err := flagutil.ValidateServerURL(serverURL); err != nil {
+		return nil, err
 	}
 
 	// Timeout (always available)
@@ -46,7 +48,6 @@ func NewClient(cmd *cobra.Command, allowedSecurityFields ...string) (*sdk.SDK, e
 	}
 	httpClient = WrapClientForDiagnostics(cmd, httpClient)
 	sdkOpts = append(sdkOpts, sdk.WithClient(httpClient))
-	serverURL, _ := flagutil.GetStringFlag(cmd, "server-url")
 	return sdk.New(serverURL, sdkOpts...), nil
 }
 

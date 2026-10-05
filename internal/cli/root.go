@@ -39,6 +39,7 @@ func NewRootCommand() (*cobra.Command, error) {
 			return cmd.Help()
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			flagutil.ClearDryRunRequest(cmd)
 			if usage.UsageRequested(cmd) {
 				return nil
 			}
