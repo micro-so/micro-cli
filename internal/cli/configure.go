@@ -3,13 +3,16 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+	"openapi/internal/client"
 	"openapi/internal/config"
-	"openapi/internal/output"
+	"openapi/internal/flagutil"
+	"openapi/internal/interactive"
 	"openapi/internal/usage"
 	"os"
 )
@@ -27,6 +30,7 @@ You can also set values via environment variables with the CLI_ prefix
 (e.g., CLI_API_KEY) or pass them as flags to individual commands.
 
 Priority: CLI flags > environment variables > OS keychain > config file`,
+		Args: cobra.NoArgs,
 		RunE: runConfigureCmd,
 	}
 	parent.AddCommand(cmd)
@@ -38,43 +42,33 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	// Agent mode: reject interactive configure — agents should use env vars/flags.
-	if output.IsAgentMode() {
-		return output.AgentModeError(cmd,
-			"configure_blocked",
-			"the 'configure' command is interactive and cannot be used in agent mode",
-			[]string{
-				fmt.Sprintf("Set credentials via environment variables (prefix: %s_)", "CLI"),
-				"Pass credentials directly as CLI flags for each command",
-				fmt.Sprintf("Run '%s whoami' to verify current authentication", "cli"),
-			},
-		)
+	if dryRunLocalNoop(cmd, "configure changes local settings only (no API request); nothing was changed.") {
+		return nil
 	}
-
 	cfg := config.GetConfig()
 	if cfg == nil {
 		cfg = &config.Config{}
 	}
-	if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
+
+	keychainStored := false
+
+	formMode := interactive.Resolve(cmd).FormMode()
+	if formMode == interactive.FormOff {
 		changed := false
 		if f := cmd.Flags().Lookup("api-key"); f != nil && f.Changed {
 			v, _ := cmd.Flags().GetString("api-key")
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", v); err != nil {
-					cfg.Security.ApiKey = v // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = v // no keyring, store in config
+			if config.StoreSecret("api-key", v, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 			changed = true
 		}
 
 		if !changed {
-			return fmt.Errorf("no flags provided; use flags to set values non-interactively, or remove --no-interactive")
+			return flagutil.WithCLIValidation(fmt.Errorf("no flags provided; use flags to store values in %s, or pass --interactive to open the form", config.GetConfigPath()))
 		}
 	} else {
 		var authApiKey string
-		accessible := !configureIsInteractive(cmd)
+		accessible := formMode == interactive.FormAccessible
 
 		var groups []*huh.Group
 		securityFields := []huh.Field{
@@ -82,7 +76,7 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 				Title("Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.").
 				Description("--api-key").
 				EchoMode(huh.EchoModePassword).
-				Placeholder(maskSecret(cfg.Security.ApiKey)).
+				Placeholder(maskSecret(config.GetStoredSecret("api-key", cfg.Security.ApiKey))).
 				Value(&authApiKey),
 		}
 		groups = append(groups, huh.NewGroup(securityFields...).Title("Authentication"))
@@ -119,12 +113,8 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("configure: %w", err)
 		}
 		if authApiKey != "" {
-			if config.KeyringAvailable() {
-				if err := config.SetKeyringValue("api-key", authApiKey); err != nil {
-					cfg.Security.ApiKey = authApiKey // keyring failed, store in config
-				}
-			} else {
-				cfg.Security.ApiKey = authApiKey // no keyring, store in config
+			if config.StoreSecret("api-key", authApiKey, &cfg.Security.ApiKey) == nil {
+				keychainStored = true
 			}
 		}
 		if !accessible {
@@ -142,23 +132,34 @@ func runConfigureCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	out := cmd.OutOrStdout()
-	if config.KeyringAvailable() {
+	if keychainStored {
 		fmt.Fprintln(out, "Secret credentials stored in OS keychain")
 	}
 	fmt.Fprintf(out, "Configuration saved to %s\n", config.GetConfigPath())
 	return nil
 }
 
-// configureIsInteractive returns true when the configure command should use rich TUI forms.
-// Returns false in agent mode — agents should never see TUI rendering.
-func configureIsInteractive(cmd *cobra.Command) bool {
-	if noInteractive, _ := cmd.Flags().GetBool("no-interactive"); noInteractive {
+// dryRunLocalNoop implements the append-safe dry-run contract for local
+// mutation commands: no prompts, keychain access, or filesystem writes. The
+// machine preview protocol still receives an explicit local no-op record —
+// silence would be indistinguishable from a failed preview.
+func dryRunLocalNoop(cmd *cobra.Command, message string) bool {
+	if !client.IsDryRun(cmd) {
 		return false
 	}
-	if output.IsAgentMode() {
-		return false
+	if client.IsJSONDryRun(cmd) {
+		enc := json.NewEncoder(cmd.OutOrStdout())
+		enc.SetEscapeHTML(false)
+		_ = enc.Encode(struct {
+			DryRun  bool   `json:"dry_run"`
+			Local   bool   `json:"local"`
+			Command string `json:"command"`
+			Message string `json:"message"`
+		}{DryRun: true, Local: true, Command: cmd.CommandPath(), Message: message})
+	} else {
+		fmt.Fprintln(cmd.ErrOrStderr(), "[DRY-RUN] "+message)
 	}
-	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+	return true
 }
 
 // configureFormTheme builds the form theme for the configure command.
