@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,14 +14,14 @@ import (
 
 var listObjectsCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"deal", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: deal, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
-	{FlagName: "cursor", Shorthand: "c", FieldPath: "Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Opaque cursor from a previous response's `next_cursor`. Pass it back unchanged to fetch the next page."},
-	{FlagName: "limit", FieldPath: "Limit", Kind: flagutil.FlagKindInt64, Optional: true, Description: "Maximum number of rows to return. Capped server-side at 50."},
-	{FlagName: "sort", FieldPath: "Sort", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated list of slugs. Prefix with `-` for descending. Example: `sort=-updated_at,name`."},
-	{FlagName: "select", FieldPath: "Select", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated property slugs to return. Use dot notation for relationships. `id` is always returned at the top level. Defaults to all properties."},
+	{FlagName: "object-type", FieldPath: "ObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "deal", "engagement", "identity", "ai_chat_thread", "ai_chat_message", "document", "action", "event", "organization", "contact"}, Description: "options: comment, deal, engagement, identity, ai_chat_thread, ai_chat_message, document, action, event, organization, contact [required]"},
+	{FlagName: "cursor", Shorthand: "c", FieldPath: "Cursor", Kind: flagutil.FlagKindString, Optional: true, Description: "Opaque cursor from a previous response's 'next_cursor'. Pass it back unchanged to fetch the next page."},
+	{FlagName: "limit", FieldPath: "Limit", Kind: flagutil.FlagKindInt64, Optional: true, HasMinimum: true, Minimum: 1, HasMaximum: true, Maximum: 50, Description: "Maximum number of rows to return. Capped server-side at 50."},
+	{FlagName: "sort", FieldPath: "Sort", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated list of slugs. Prefix with '-' for descending. Example: 'sort=-updated_at,name'."},
+	{FlagName: "select", FieldPath: "Select", Kind: flagutil.FlagKindString, Optional: true, Description: "Comma-separated property slugs to return. Use dot notation for relationships. 'id' is always returned at the top level. Defaults to all properties."},
 	{FlagName: "list-id", FieldPath: "ListID", Kind: flagutil.FlagKindString, Optional: true, Description: "Scope properties to a specific list/app."},
-	{FlagName: "deleted", FieldPath: "Deleted", Kind: flagutil.FlagKindBool, Optional: true, Description: "Include soft-deleted records. Pass the literal string `true`."},
-	{FlagName: "include-total", Shorthand: "i", FieldPath: "IncludeTotal", Kind: flagutil.FlagKindBool, Optional: true, Description: "When set to `true`, the response includes a `total` field with the unpaginated row count. Costs an extra pass; prefer `GET .../count` for the unfiltered total."},
+	{FlagName: "deleted", FieldPath: "Deleted", Kind: flagutil.FlagKindBool, Optional: true, Description: "Include soft-deleted records. Pass the literal string 'true'."},
+	{FlagName: "include-total", Shorthand: "i", FieldPath: "IncludeTotal", Kind: flagutil.FlagKindBool, Optional: true, Description: "When set to 'true', the response includes a 'total' field with the unpaginated row count. Costs an extra pass; prefer 'GET .../count' for the unfiltered total."},
 }
 
 // initListObjectsCmd initializes the list-objects command.
@@ -31,9 +30,13 @@ func initListObjectsCmd(parent *cobra.Command) error {
 		Use:     "list-objects",
 		Short:   "List records of an object type",
 		Long:    "Convenience list endpoint. Equivalent to `POST /v2/prism/{teamId}/{objectType}/query` with an empty body, plus query-string sugar for the common cases. Any unrecognized query parameter is interpreted as an equality filter on a property of that name; pass arrays for `in`. Values are received as strings, so non-string property filters via this endpoint may not work — use the `query` endpoint for typed comparisons or anything beyond simple equality.",
-		Example: "  cli SDK list-objects --team-id 25f1d299-6309-41ac-8567-2758463e8183 --object-type event",
+		Example: "  cli list-objects --team-id 25f1d299-6309-41ac-8567-2758463e8183 --object-type event",
+		Args:    cobra.NoArgs,
 		RunE:    runListObjectsCmd,
 		Aliases: []string{"lo"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "listObjects",
+		},
 	}
 	flagutil.RegisterFlags(cmd, listObjectsCmdMeta)
 	if err := flagutil.ValidateMeta[operations.ListObjectsRequest](listObjectsCmdMeta); err != nil {
@@ -48,14 +51,9 @@ func runListObjectsCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, listObjectsCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, listObjectsCmdMeta); err != nil {
-			return err
-		}
-	}
 	req, err := flagutil.BuildRequest[operations.ListObjectsRequest](cmd, listObjectsCmdMeta, "", "")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
@@ -73,7 +71,10 @@ func runListObjectsCmd(cmd *cobra.Command, args []string) error {
 	if output.WantsRawJSON(cmd) {
 		sdkOpts = append(sdkOpts, operations.WithSkipDeserialization())
 	}
+	stopProgress := output.StartRequestProgress(cmd)
+	defer stopProgress()
 	res, err := s.ListObjects(cmd.Context(), *req, sdkOpts...)
+	stopProgress()
 	if err != nil {
 		return output.Error(cmd, err)
 	}

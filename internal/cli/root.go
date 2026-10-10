@@ -3,15 +3,20 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/term"
+	"openapi/internal/clierrors"
 	"openapi/internal/config"
 	"openapi/internal/explorer"
+	"openapi/internal/flagutil"
+	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/usage"
 	"os"
+	"os/signal"
 	"strings"
 )
 
@@ -38,10 +43,26 @@ func NewRootCommand() (*cobra.Command, error) {
 			if usage.UsageRequested(cmd) {
 				return nil
 			}
+			if err := flagutil.ValidateOutputFormatFlag(cmd, output.Formats); err != nil {
+				return err
+			}
+			if err := flagutil.ValidateEnumFlag(cmd, "color", []string{"auto", "always", "never"}); err != nil {
+				return err
+			}
 			if err := config.Init("cli", "CLI"); err != nil {
 				return err
 			}
+			config.SetKeyringWarningOutput(cmd.ErrOrStderr())
+			if noKeyring, changed := flagutil.GetBoolFlag(cmd, "no-keyring"); changed {
+				if noKeyring {
+					config.DisableKeyring()
+				}
+			} else if config.GetString("no-keyring") == "true" {
+				config.DisableKeyring()
+			}
 			output.InitAgentMode(cmd)
+			flagutil.SetStdinReadDeadline(output.IsAgentMode())
+			flagutil.ResetStdinSkip()
 			return nil
 		},
 	}
@@ -159,13 +180,14 @@ func NewRootCommand() (*cobra.Command, error) {
 	initExploreCmd(rootCmd)
 
 	// Global output format flag
-	rootCmd.PersistentFlags().StringP("output-format", "o", "pretty", "Specify the output format. Options: pretty, json, yaml, table, toon.")
+	rootCmd.PersistentFlags().StringP("output-format", "o", "pretty", "Specify the output format. Options: "+strings.Join(output.Formats, ", ")+".")
 
 	// Color control flag
 	rootCmd.PersistentFlags().String("color", "auto", "Control colored output: auto (color when output is a TTY), always, or never. Respects NO_COLOR and FORCE_COLOR env vars.")
 
 	// jq filtering flag
 	rootCmd.PersistentFlags().StringP("jq", "q", "", "Filter and transform output using a jq expression (e.g., '.name', '.items[] | .id')")
+	rootCmd.PersistentFlags().Bool("raw-output", false, "Write --jq string results as raw text instead of JSON strings (like jq -r); non-string results stay JSON")
 
 	// Global server URL flag
 	rootCmd.PersistentFlags().String("server-url", "", "Override the default server URL")
@@ -181,12 +203,12 @@ func NewRootCommand() (*cobra.Command, error) {
 
 	// Request timeout (always available)
 	rootCmd.PersistentFlags().String("timeout", "", "HTTP request timeout (e.g., 30s, 5m, 100ms)")
-	// Interactive mode control
+	rootCmd.PersistentFlags().Bool("interactive", true, "Prompt for missing inputs and open guided configure/auth forms (forms fall back to line prompts on stdin off-TTY)")
 	rootCmd.PersistentFlags().Bool("no-interactive", false, "Disable all interactive features (auto-prompting, explorer auto-launch, TUI forms)")
 
 	// Diagnostics flags
 	rootCmd.PersistentFlags().Bool("usage", false, "Print the CLI Usage schema in KDL format")
-	rootCmd.PersistentFlags().Bool("dry-run", false, "Preview the request that would be sent without executing it (output to stderr)")
+	rootCmd.PersistentFlags().Bool("dry-run", false, "Preview API requests without sending them (no network, no OS keychain). Human preview on stderr; with -o json or --jq, one JSON object per request on stdout. Local mutation commands (auth login, auth logout and configure) make no request: they skip prompts and writes and report a no-op (stderr, or one JSON object on stdout in the machine form)")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Log request and response diagnostics to stderr")
 
 	// Agent mode — optimized output for AI coding agent consumption.
@@ -194,19 +216,23 @@ func NewRootCommand() (*cobra.Command, error) {
 	// Use this flag to explicitly enable or disable (--agent-mode=false) the behavior.
 	rootCmd.PersistentFlags().Bool("agent-mode", false,
 		"Enable structured errors and default TOON output for AI coding agents. "+
-			"Automatically enabled when a known agent environment is detected (CLAUDE_CODE, CURSOR_AGENT, etc.). "+
+			"Automatically enabled when a known agent environment is detected (CLAUDECODE, CURSOR_AGENT, etc.). "+
 			"Use --agent-mode=false to disable.")
 
 	// Global security flags
 	rootCmd.PersistentFlags().String("api-key", "", "Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.")
 	_ = rootCmd.PersistentFlags().SetAnnotation("api-key", "speakeasy:group", []string{"Authentication"})
+	rootCmd.PersistentFlags().Bool("no-keyring", false, "Never read or write the OS keychain; store secrets in the config file instead (env: CLI_NO_KEYRING)")
+	_ = rootCmd.PersistentFlags().SetAnnotation("no-keyring", "speakeasy:group", []string{"Authentication"})
 
 	// Annotate persistent flags for grouped help display
 	for _, ga := range []struct{ flag, group string }{
 		{"output-format", "Output"},
 		{"color", "Output"},
+		{"raw-output", "Output"},
 		{"jq", "Output"},
 		{"include-headers", "Output"},
+		{"interactive", "Output"},
 		{"no-interactive", "Output"},
 		{"server-url", "Server"},
 		{"server", "Server"},
@@ -222,6 +248,15 @@ func NewRootCommand() (*cobra.Command, error) {
 
 	rootCmd.SetUsageTemplate(groupedUsageTemplate())
 
+	// Cobra creates its default help and completion commands lazily inside Execute.
+	rootCmd.InitDefaultHelpCmd()
+	rootCmd.InitDefaultCompletionCmd()
+	interactive.Intercept(rootCmd)
+	usage.Intercept(rootCmd)
+	// Cobra validates Args before any PersistentPreRunE runs.
+	output.InstallErrorHandling(rootCmd)
+	output.InstallHelpStyling(rootCmd)
+
 	return rootCmd, nil
 }
 
@@ -231,21 +266,47 @@ func Execute() error {
 	if err != nil {
 		return err
 	}
+	ctx, stop := InterruptContext(context.Background())
+	defer stop()
 
-	// Early agent mode detection from env vars (flag parsing hasn't happened yet).
-	// This prevents the explorer TUI from launching when an AI agent is driving the CLI.
 	output.InitAgentMode(rootCmd)
-
-	// Auto-launch explorer when invoked with no subcommand from a TTY
 	if shouldAutoExplore() {
-		return runExplorer(rootCmd)
+		return runExplorer(ctx, rootCmd)
 	}
 
-	return rootCmd.Execute()
+	return ExecuteRoot(ctx, rootCmd, os.Args[1:])
 }
 
-// shouldAutoExplore returns true when the CLI is invoked with no subcommand
-// from an interactive terminal and agent mode is not active.
+// InterruptContext cancels on the first interrupt. The default signal
+// behavior is restored once the context is done, so a second interrupt still
+// terminates a command that does not observe its context.
+func InterruptContext(parent context.Context) (context.Context, context.CancelFunc) {
+	ctx, stop := signal.NotifyContext(parent, os.Interrupt)
+	go func() {
+		<-ctx.Done()
+		stop()
+	}()
+	return ctx, stop
+}
+
+func ExecuteRoot(ctx context.Context, root *cobra.Command, args []string) error {
+	// Cobra aborts on an unknown command or flag before PersistentPreRunE runs.
+	output.InitAgentMode(root)
+	target, _, findErr := root.Find(args)
+	if findErr != nil || target == nil {
+		target = root
+	}
+	output.PreparseRenderingFlags(target, args)
+	root.SetArgs(args)
+	executed, err := root.ExecuteContextC(ctx)
+	if executed == nil {
+		executed = root
+	}
+	if err != nil && findErr != nil {
+		err = flagutil.WithCLIValidation(err)
+	}
+	return output.CLIError(executed, err)
+}
 func shouldAutoExplore() bool {
 	if len(os.Args) > 1 {
 		return false
@@ -260,7 +321,6 @@ func shouldAutoExplore() bool {
 	return true
 }
 
-// initExploreCmd registers the "explore" subcommand.
 func initExploreCmd(parent *cobra.Command) {
 	parent.AddCommand(&cobra.Command{
 		Use:   "explore",
@@ -271,13 +331,40 @@ func initExploreCmd(parent *cobra.Command) {
 			if output.IsAgentMode() {
 				return cmd.Root().Help()
 			}
-			return runExplorer(cmd.Root())
+			if err := interactive.Resolve(cmd).ValidateDirectExplore(); err != nil {
+				return err
+			}
+			return runExplorer(cmd.Context(), cmd.Root())
 		},
 	})
 }
 
+func ExplorerHandoffArgs(root *cobra.Command, selectedArgs []string) []string {
+	interactionFlag := "--interactive"
+	if noInteractive, _ := root.PersistentFlags().GetBool("no-interactive"); noInteractive {
+		interactionFlag = "--no-interactive"
+	}
+	handoffArgs := []string{interactionFlag}
+	if dryRun, _ := root.PersistentFlags().GetBool("dry-run"); dryRun {
+		handoffArgs = append(handoffArgs, "--dry-run")
+	}
+	if debug, _ := root.PersistentFlags().GetBool("debug"); debug {
+		handoffArgs = append(handoffArgs, "--debug")
+	}
+	// Rendering flags given to the explore invocation apply to the selected
+	// command: the fresh command tree re-parses argv (and resets the
+	// preparsed rendering state), so they must travel with it. The
+	// --name=value form keeps boolean flags from swallowing the next token.
+	for _, name := range []string{"output-format", "jq", "raw-output", "color"} {
+		if flag := root.PersistentFlags().Lookup(name); flag != nil && flag.Changed {
+			handoffArgs = append(handoffArgs, "--"+name+"="+flag.Value.String())
+		}
+	}
+	return append(handoffArgs, selectedArgs...)
+}
+
 // runExplorer launches the explorer TUI and handles command execution handoff.
-func runExplorer(root *cobra.Command) error {
+func runExplorer(ctx context.Context, root *cobra.Command) error {
 	selectedArgs, err := explorer.Run(root, Version)
 	if err != nil {
 		return err
@@ -290,8 +377,7 @@ func runExplorer(root *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	freshRoot.SetArgs(selectedArgs)
-	return freshRoot.Execute()
+	return ExecuteRoot(ctx, freshRoot, ExplorerHandoffArgs(root, selectedArgs))
 }
 
 // globalFlagGroupOrder defines the display order for flag groups in help output.
@@ -388,7 +474,29 @@ func groupedGlobalFlagUsages(flags *pflag.FlagSet) string {
 func renderOperationGroups(flags *pflag.FlagSet) string {
 	groups := make(map[string]*pflag.FlagSet)
 	groupOrder := []string{}
+	groupOrders := make(map[string]int)
 	ungrouped := pflag.NewFlagSet("ungrouped", pflag.ContinueOnError)
+
+	parseOrder := func(raw string) (int, bool) {
+		if raw == "" {
+			return 0, false
+		}
+		sign, start := 1, 0
+		if raw[0] == '-' {
+			sign, start = -1, 1
+		}
+		if start == len(raw) {
+			return 0, false
+		}
+		value := 0
+		for i := start; i < len(raw); i++ {
+			if raw[i] < '0' || raw[i] > '9' {
+				return 0, false
+			}
+			value = value*10 + int(raw[i]-'0')
+		}
+		return sign * value, true
+	}
 
 	flags.VisitAll(func(f *pflag.Flag) {
 		if f.Hidden {
@@ -401,10 +509,29 @@ func renderOperationGroups(flags *pflag.FlagSet) string {
 				groupOrder = append(groupOrder, name)
 			}
 			groups[name].AddFlag(f)
+			if orderAnn, ok := f.Annotations["speakeasy:group-order"]; ok && len(orderAnn) > 0 {
+				if order, valid := parseOrder(orderAnn[0]); valid {
+					current, exists := groupOrders[name]
+					if !exists || order < current {
+						groupOrders[name] = order
+					}
+				}
+			}
 		} else {
 			ungrouped.AddFlag(f)
 		}
 	})
+
+	for i := 1; i < len(groupOrder); i++ {
+		for j := i; j > 0; j-- {
+			current, currentOrdered := groupOrders[groupOrder[j]]
+			previous, previousOrdered := groupOrders[groupOrder[j-1]]
+			if !currentOrdered || (previousOrdered && current >= previous) {
+				break
+			}
+			groupOrder[j], groupOrder[j-1] = groupOrder[j-1], groupOrder[j]
+		}
+	}
 
 	var buf strings.Builder
 
@@ -481,6 +608,7 @@ func renderGroupedFlags(flags *pflag.FlagSet, fallbackHeader string) string {
 func groupedUsageTemplate() string {
 	ob := string([]byte{'{', '{'})
 	cb := string([]byte{'}', '}'})
+	nl := string(rune(10))
 	defaultTmpl := (&cobra.Command{}).UsageTemplate()
 
 	// Replace local flags section
@@ -492,6 +620,15 @@ func groupedUsageTemplate() string {
 	oldGlobal := "Global Flags:\n" + ob + ".InheritedFlags.FlagUsages | trimTrailingWhitespaces" + cb
 	replGlobal := ob + "groupedGlobalFlagUsages .InheritedFlags | trimTrailingWhitespaces" + cb
 	result = strings.Replace(result, oldGlobal, replGlobal, 1)
+
+	oldFooter := "for more information about a command." + ob + "end" + cb
+	replFooter := "for more information about a command." +
+		ob + "if not .HasParent" + cb +
+		"\n\nMachine interface: --usage (command tree as KDL) · --schema (request JSON Schema, on commands with a body) · --dry-run (request preview, no credentials) · --output-format json · --jq <expr>" +
+		ob + "end" + cb + ob + "end" + cb
+	result = strings.Replace(result, oldFooter, replFooter, 1)
+
+	result = strings.TrimRight(result, nl) + nl + nl + clierrors.HelpFooter + nl
 
 	return result
 }

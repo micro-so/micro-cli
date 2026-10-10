@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"openapi/internal/client"
 	"openapi/internal/flagutil"
-	"openapi/internal/interactive"
 	"openapi/internal/output"
 	"openapi/internal/sdk/models/operations"
 	"openapi/internal/usage"
@@ -15,9 +14,9 @@ import (
 
 var patchViewCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "team-id", Shorthand: "t", FieldPath: "TeamID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"action", "deal", "document", "event", "identity", "organization"}, Description: "options: action, deal, document, event, identity, organization [required]"},
+	{FlagName: "view-object-type", FieldPath: "ViewObjectType", Kind: flagutil.FlagKindEnum, Required: true, EnumValues: []string{"comment", "action", "deal", "engagement", "document", "event", "identity", "organization"}, Description: "options: comment, action, deal, engagement, document, event, identity, organization [required]"},
 	{FlagName: "view-id", FieldPath: "ViewID", Kind: flagutil.FlagKindString, Required: true, Description: "[required]"},
-	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 `idempotency_key_mismatch`. Replays include the `idempotent-replay: true` response header."},
+	{FlagName: "idempotency-key", Shorthand: "i", FieldPath: "IdempotencyKey", Kind: flagutil.FlagKindString, Optional: true, MinLength: 1, HasMaxLength: true, MaxLength: 255, Description: "A unique key (UUID or any opaque string up to 255 chars) that identifies this logical request. The server caches the first response under this key for 24 hours and replays it on retry — safe to use on every POST/PUT/PATCH to make network retries deterministic. Reusing the same key with a different body returns 409 'idempotency_key_mismatch'. Replays include the 'idempotent-replay: true' response header."},
 	{FlagName: "body-param.name", FieldPath: "Body.Name", Kind: flagutil.FlagKindString, Optional: true, Description: "string value"},
 	{FlagName: "body-param.icon", FieldPath: "Body.Icon", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"icon,omitempty"`, Description: "string value"},
 	{FlagName: "body-param.view-type", FieldPath: "Body.ViewType", Kind: flagutil.FlagKindString, Optional: true, Description: "string value"},
@@ -34,8 +33,8 @@ var patchViewCmdMeta = []flagutil.FlagMeta{
 	{FlagName: "body-param.aggregation-type", FieldPath: "Body.AggregationType", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"aggregation_type,omitempty"`, Description: "string value"},
 	{FlagName: "body-param.aggregation-prop-def-id", FieldPath: "Body.AggregationPropDefID", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"aggregation_prop_def_id,omitempty"`, Description: "string value"},
 	{FlagName: "body-param.select", FieldPath: "Body.Select", Kind: flagutil.FlagKindStringArray, Optional: true, Description: "list of values"},
-	{FlagName: "body-param.filter", FieldPath: "Body.Filter", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"filter,omitempty"`, Description: "list of values"},
-	{FlagName: "body-param.sort", FieldPath: "Body.Sort", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"sort,omitempty"`, Description: "list of values"},
+	{FlagName: "body-param.filter", FieldPath: "Body.Filter", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"filter,omitempty"`, Description: "JSON array"},
+	{FlagName: "body-param.sort", FieldPath: "Body.Sort", Kind: flagutil.FlagKindJSON, Optional: true, Annotations: `json:"sort,omitempty"`, Description: "JSON array"},
 }
 
 // initPatchViewCmd initializes the patch-view command.
@@ -44,15 +43,26 @@ func initPatchViewCmd(parent *cobra.Command) error {
 		Use:     "patch-view",
 		Short:   "Update a view bundle (select/filter/sort arrays are replaced wholesale when supplied)",
 		Long:    "Update a view bundle (select/filter/sort arrays are replaced wholesale when supplied)",
-		Example: "  cli SDK patch-view --team-id 71d03c6d-331f-4ab0-a736-ed919385894f --view-object-type organization --view-id da4fdf5f-2002-43d8-9307-719c29ea935e",
+		Example: "  cli patch-view --team-id 71d03c6d-331f-4ab0-a736-ed919385894f --view-object-type organization --view-id da4fdf5f-2002-43d8-9307-719c29ea935e",
+		Args:    cobra.NoArgs,
 		RunE:    runPatchViewCmd,
 		Aliases: []string{"pv"},
+		Annotations: map[string]string{
+			"speakeasy_operation": "patchView",
+		},
 	}
 	flagutil.RegisterFlags(cmd, patchViewCmdMeta)
 	if err := flagutil.ValidateMeta[operations.PatchViewRequest](patchViewCmdMeta); err != nil {
 		return fmt.Errorf("invalid metadata for patch-view: %w", err)
 	}
-	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin.")
+	cmd.Flags().String("body", "", "Request body as JSON (alternative to individual flags). Can also be provided via stdin; @path reads a file, @- reads stdin to EOF. Use --schema to print the exact JSON Schema.")
+	_ = flagutil.AnnotatePromptFlag(cmd, "body", flagutil.PromptFlagSpec{Required: false, Kind: "json", BodyFlag: true})
+	cmd.Annotations[flagutil.AnnotationWholeBodyFlag] = "body"
+	if err := flagutil.AnnotateBodyFields(cmd, patchViewCmdMeta, "Body", "body"); err != nil {
+		return fmt.Errorf("annotate body fields for patch-view: %w", err)
+	}
+	cmd.Flags().Bool("schema", false, "Print the exact JSON Schema of the request body and exit")
+	_ = flagutil.AnnotatePromptFlag(cmd, "schema", flagutil.PromptFlagSpec{Kind: "bool", DocSurface: true})
 	parent.AddCommand(cmd)
 	return nil
 }
@@ -62,14 +72,12 @@ func runPatchViewCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
-	if interactive.ShouldPrompt(cmd, patchViewCmdMeta) {
-		if err := interactive.PromptAndSetFlags(cmd, patchViewCmdMeta); err != nil {
-			return err
-		}
+	if requested, _ := cmd.Flags().GetBool("schema"); requested {
+		return usage.EmitBodySchema(cmd.OutOrStdout(), "patchView")
 	}
 	req, err := flagutil.BuildRequest[operations.PatchViewRequest](cmd, patchViewCmdMeta, "Body", "body")
 	if err != nil {
-		return err
+		return flagutil.WithCLIValidation(err)
 	}
 	s, err := client.NewClient(cmd)
 	if err != nil {
@@ -87,7 +95,10 @@ func runPatchViewCmd(cmd *cobra.Command, args []string) error {
 	if output.WantsRawJSON(cmd) {
 		sdkOpts = append(sdkOpts, operations.WithSkipDeserialization())
 	}
+	stopProgress := output.StartRequestProgress(cmd)
+	defer stopProgress()
 	res, err := s.PatchView(cmd.Context(), *req, sdkOpts...)
+	stopProgress()
 	if err != nil {
 		return output.Error(cmd, err)
 	}

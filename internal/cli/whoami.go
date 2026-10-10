@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"openapi/internal/config"
+	"openapi/internal/output"
 	"openapi/internal/usage"
 )
 
@@ -21,9 +22,11 @@ Sources are shown as:
   [env]     - Set via environment variable (CLI_*)
   [keyring] - Set via OS keychain (stored by configure command)
   [config]  - Set via config file (~/.config/cli/config.yaml)
+  [default] - Built-in global parameter flag default
   [unset]   - Not configured
 
 Credential values are masked for security.`,
+		Args: cobra.NoArgs,
 		RunE: runWhoamiCmd,
 	}
 	parent.AddCommand(cmd)
@@ -35,6 +38,22 @@ func runWhoamiCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
+
+	if output.IsMachineMode(cmd) {
+		info := map[string]any{
+			"config_file":        config.GetConfigPath(),
+			"environment_prefix": "CLI_",
+		}
+		credentials := map[string]any{}
+		{
+			value, source := config.ResolveRequestSecurityCredential(cmd, "api-key")
+			credentials["api-key"] = map[string]any{"source": source, "value": maskSecret(value)}
+		}
+		info["credentials"] = credentials
+
+		return output.LocalResult(cmd, info)
+	}
+
 	out := cmd.OutOrStdout()
 	fmt.Fprintln(out, "Configuration")
 	fmt.Fprintln(out, "=============")
@@ -46,7 +65,7 @@ func runWhoamiCmd(cmd *cobra.Command, args []string) error {
 
 	// Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.
 	{
-		value, source := config.ResolveSecurityCredential(cmd, "api-key")
+		value, source := config.ResolveRequestSecurityCredential(cmd, "api-key")
 		fmt.Fprintf(out, "  --%-25s [%-7s] %s\n", "api-key", source, maskSecret(value))
 	}
 
