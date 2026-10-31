@@ -192,7 +192,14 @@ func CreatePrismObjectPropertiesUnionPrismObjectProperties2(prismObjectPropertie
 	}
 }
 
-func (u *PrismObjectPropertiesUnion) UnmarshalJSON(data []byte) error {
+func (u *PrismObjectPropertiesUnion) UnmarshalJSON(data []byte) (err error) {
+	previous := *u
+	*u = PrismObjectPropertiesUnion{}
+	defer func() {
+		if err != nil {
+			*u = previous
+		}
+	}()
 
 	var candidates []utils.UnionCandidate
 

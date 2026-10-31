@@ -5,6 +5,7 @@ package operations
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"openapi/internal/sdk/models/components"
 	"openapi/internal/sdk/sdkinternal/utils"
 )
@@ -125,6 +126,7 @@ func (u GetViewResponseBody) IsUnknown() bool {
 }
 
 func (u *GetViewResponseBody) UnmarshalJSON(data []byte) error {
+	*u = GetViewResponseBody{}
 
 	var candidates []utils.UnionCandidate
 
@@ -146,6 +148,9 @@ func (u *GetViewResponseBody) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(candidates) == 0 {
+		if !json.Valid(data) {
+			return fmt.Errorf("could not unmarshal `%s` into any supported union types for GetViewResponseBody", string(data))
+		}
 		u.UnknownRaw = json.RawMessage(data)
 		u.Type = GetViewResponseBodyTypeUnknown
 		return nil
@@ -170,6 +175,9 @@ func (u *GetViewResponseBody) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
+	if !json.Valid(data) {
+		return fmt.Errorf("could not unmarshal `%s` into any supported union types for GetViewResponseBody", string(data))
+	}
 	u.UnknownRaw = json.RawMessage(data)
 	u.Type = GetViewResponseBodyTypeUnknown
 	return nil

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"openapi/internal/config"
+	"openapi/internal/output"
 	"openapi/internal/usage"
 )
 
@@ -19,12 +20,15 @@ func initWhoamiCmd(parent *cobra.Command) error {
 Sources are shown as:
   [flag]    - Set via command line flag
   [env]     - Set via environment variable (CLI_*)
-  [keyring] - Set via OS keychain (stored by configure command)
+  [keyring] - Set via OS credential store: macOS Keychain, Windows Credential Manager or Secret Service (stored by configure command)
   [config]  - Set via config file (~/.config/cli/config.yaml)
+  [default] - Built-in default
   [unset]   - Not configured
 
 Credential values are masked for security.`,
-		RunE: runWhoamiCmd,
+		Annotations: map[string]string{"speakeasy_settings_command": "true"},
+		Args:        cobra.NoArgs,
+		RunE:        runWhoamiCmd,
 	}
 	parent.AddCommand(cmd)
 	return nil
@@ -35,6 +39,26 @@ func runWhoamiCmd(cmd *cobra.Command, args []string) error {
 	if usage.UsageRequested(cmd) {
 		return usage.EmitSchema(cmd, cmd.OutOrStdout())
 	}
+
+	if output.IsMachineMode(cmd) {
+		info := map[string]any{
+			"config_file":        config.GetConfigPath(),
+			"environment_prefix": "CLI_",
+		}
+		credentials := map[string]any{}
+		{
+			value, source := config.ResolveRequestSecurityCredential(cmd, "api-key")
+			credentials["api-key"] = map[string]any{"source": source, "value": maskSecret(value)}
+		}
+		info["credentials"] = credentials
+
+		outputFormat, outputFormatSource := whoamiOutputFormat(cmd)
+		info["preferences"] = map[string]any{
+			"output-format": map[string]any{"source": outputFormatSource, "value": outputFormat},
+		}
+		return output.LocalResult(cmd, info)
+	}
+
 	out := cmd.OutOrStdout()
 	fmt.Fprintln(out, "Configuration")
 	fmt.Fprintln(out, "=============")
@@ -46,9 +70,24 @@ func runWhoamiCmd(cmd *cobra.Command, args []string) error {
 
 	// Public API key generated from Micro settings. Sent as the `x-api-key` header and validated by AWS API Gateway in front of the service.
 	{
-		value, source := config.ResolveSecurityCredential(cmd, "api-key")
+		value, source := config.ResolveRequestSecurityCredential(cmd, "api-key")
 		fmt.Fprintf(out, "  --%-25s [%-7s] %s\n", "api-key", source, maskSecret(value))
 	}
 
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "Preferences:")
+	outputFormat, outputFormatSource := whoamiOutputFormat(cmd)
+	fmt.Fprintf(out, "  --%-25s [%-7s] %s\n", "output-format", outputFormatSource, outputFormat)
+
 	return nil
+}
+
+func whoamiOutputFormat(cmd *cobra.Command) (value, source string) {
+	if value, source := config.ResolveCredential(cmd, "output-format", false); source != "unset" {
+		return value, source
+	}
+	if output.IsAgentMode() {
+		return "toon", "default"
+	}
+	return "pretty", "default"
 }

@@ -82,7 +82,14 @@ func CreateViewBundlePatchGroupHiddenOptionIdsUnionViewBundlePatchGroupHiddenOpt
 	}
 }
 
-func (u *ViewBundlePatchGroupHiddenOptionIdsUnion) UnmarshalJSON(data []byte) error {
+func (u *ViewBundlePatchGroupHiddenOptionIdsUnion) UnmarshalJSON(data []byte) (err error) {
+	previous := *u
+	*u = ViewBundlePatchGroupHiddenOptionIdsUnion{}
+	defer func() {
+		if err != nil {
+			*u = previous
+		}
+	}()
 
 	var candidates []utils.UnionCandidate
 

@@ -15,8 +15,6 @@
 [CmdletBinding()]
 param()
 
-$ErrorActionPreference = 'Stop'
-
 # Configuration
 $Repo = "micro-so/micro-cli"
 $BinaryName = "cli.exe"
@@ -40,8 +38,7 @@ function Get-LatestVersion {
         return $response.tag_name
     }
     catch {
-        Write-ColorOutput "Failed to get latest version: $_" -Color Red
-        exit 1
+        throw "Failed to get latest version: $_"
     }
 }
 
@@ -51,8 +48,7 @@ function Get-Architecture {
         "AMD64" { return "x86_64" }
         "ARM64" { return "arm64" }
         default {
-            Write-ColorOutput "Unsupported architecture: $arch" -Color Red
-            exit 1
+            throw "Unsupported architecture: $arch"
         }
     }
 }
@@ -87,9 +83,7 @@ function Install-CLI {
             Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
         }
         catch {
-            Write-ColorOutput "Failed to download from $downloadUrl" -Color Red
-            Write-ColorOutput "Error: $_" -Color Red
-            exit 1
+            throw "Failed to download from ${downloadUrl}: $_"
         }
 
         Write-ColorOutput "Download complete" -Color Green
@@ -135,17 +129,25 @@ function Install-CLI {
     }
     finally {
         # Cleanup
-        if (Test-Path $tempDir) {
-            Remove-Item $tempDir -Recurse -Force
+        try {
+            if (Test-Path -LiteralPath $tempDir) {
+                [System.IO.Directory]::Delete($tempDir, $true)
+            }
+        }
+        catch {
+            Write-ColorOutput "Warning: could not remove temporary directory ${tempDir}: $_" -Color Yellow
         }
     }
 }
 
 # Main execution
-try {
-    Install-CLI
-}
-catch {
-    Write-ColorOutput "Installation failed: $_" -Color Red
-    exit 1
+& {
+    $ErrorActionPreference = 'Stop'
+
+    try {
+        Install-CLI
+    }
+    catch {
+        throw "Installation failed: $_"
+    }
 }
