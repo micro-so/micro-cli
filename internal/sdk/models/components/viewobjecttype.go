@@ -10,8 +10,10 @@ import (
 type ViewObjectType string
 
 const (
+	ViewObjectTypeComment      ViewObjectType = "comment"
 	ViewObjectTypeAction       ViewObjectType = "action"
 	ViewObjectTypeDeal         ViewObjectType = "deal"
+	ViewObjectTypeEngagement   ViewObjectType = "engagement"
 	ViewObjectTypeDocument     ViewObjectType = "document"
 	ViewObjectTypeEvent        ViewObjectType = "event"
 	ViewObjectTypeIdentity     ViewObjectType = "identity"
@@ -27,9 +29,13 @@ func (e *ViewObjectType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch v {
+	case "comment":
+		fallthrough
 	case "action":
 		fallthrough
 	case "deal":
+		fallthrough
+	case "engagement":
 		fallthrough
 	case "document":
 		fallthrough
