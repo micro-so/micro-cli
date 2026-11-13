@@ -5,6 +5,7 @@ package components
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"openapi/internal/sdk/optionalnullable"
 	"openapi/internal/sdk/sdkinternal/utils"
 )
@@ -95,6 +96,7 @@ func (u ViewBundleGroupHiddenOptionIdsUnion) IsUnknown() bool {
 }
 
 func (u *ViewBundleGroupHiddenOptionIdsUnion) UnmarshalJSON(data []byte) error {
+	*u = ViewBundleGroupHiddenOptionIdsUnion{}
 
 	var candidates []utils.UnionCandidate
 
@@ -116,6 +118,9 @@ func (u *ViewBundleGroupHiddenOptionIdsUnion) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(candidates) == 0 {
+		if !json.Valid(data) {
+			return fmt.Errorf("could not unmarshal `%s` into any supported union types for ViewBundleGroupHiddenOptionIdsUnion", string(data))
+		}
 		u.UnknownRaw = json.RawMessage(data)
 		u.Type = ViewBundleGroupHiddenOptionIdsUnionTypeUnknown
 		return nil
@@ -140,6 +145,9 @@ func (u *ViewBundleGroupHiddenOptionIdsUnion) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
+	if !json.Valid(data) {
+		return fmt.Errorf("could not unmarshal `%s` into any supported union types for ViewBundleGroupHiddenOptionIdsUnion", string(data))
+	}
 	u.UnknownRaw = json.RawMessage(data)
 	u.Type = ViewBundleGroupHiddenOptionIdsUnionTypeUnknown
 	return nil
