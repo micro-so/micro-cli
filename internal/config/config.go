@@ -9,11 +9,16 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
+	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -38,6 +43,7 @@ type Config struct {
 	Security     SecurityConfig `yaml:"security,omitempty"`
 	OutputFormat string         `yaml:"output_format,omitempty"`
 	Timeout      string         `yaml:"timeout,omitempty"`
+	NoKeyring    string         `yaml:"no_keyring,omitempty"`
 }
 
 var (
@@ -74,14 +80,14 @@ func Init(name, prefix string) error {
 		data, err := os.ReadFile(configPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				initErr = fmt.Errorf("failed to read config file %s: %w", configPath, err)
+				initErr = flagutil.WithCLIValidation(fmt.Errorf("failed to read config file %s: %w", configPath, err))
 			}
 			// No config file is fine - initErr stays nil for IsNotExist
 		} else {
 			// Surface YAML parse errors - if user has a config file, they expect it to work
 			parsedCfg := &Config{}
 			if err := yaml.Unmarshal(data, parsedCfg); err != nil {
-				initErr = fmt.Errorf("failed to parse config file %s: %w", configPath, err)
+				initErr = flagutil.WithCLIValidation(fmt.Errorf("failed to parse config file %s: %w", configPath, err))
 			} else {
 				loadedCfg = parsedCfg
 			}
@@ -110,6 +116,10 @@ func Reset() {
 	envPrefix = ""
 	initErr = nil
 	initialized = false
+
+	secretsMu.Lock()
+	secretValues = nil
+	secretsMu.Unlock()
 }
 
 // GetString returns a configuration value with priority: env var > config file.
@@ -143,18 +153,120 @@ func GetConfigValue(key string) string {
 		return cfg.OutputFormat
 	case "timeout":
 		return cfg.Timeout
+	case "no-keyring":
+		return cfg.NoKeyring
 	}
 	return ""
 }
 
+// Shorter values are not scrubbed: masking them would mangle ordinary text.
+const minScrubbedSecretLength = 6
+
+var (
+	secretsMu    sync.RWMutex
+	secretValues []string
+)
+
+// RegisterSecret records a resolved credential, including its JSON-escaped and
+// query-escaped forms, so ScrubSecrets can mask it in diagnostics.
+func RegisterSecret(value string) {
+	if utf8.RuneCountInString(value) < minScrubbedSecretLength {
+		return
+	}
+	forms := []string{value}
+	for _, escapeHTML := range []bool{true, false} {
+		var buf strings.Builder
+		enc := json.NewEncoder(&buf)
+		enc.SetEscapeHTML(escapeHTML)
+		if enc.Encode(value) == nil {
+			escaped := strings.TrimSuffix(buf.String(), "\n")
+			forms = append(forms, escaped[1:len(escaped)-1])
+		}
+	}
+	forms = append(forms, url.QueryEscape(value), url.PathEscape(value))
+
+	secretsMu.Lock()
+	defer secretsMu.Unlock()
+	for _, form := range forms {
+		known := false
+		for _, existing := range secretValues {
+			if existing == form {
+				known = true
+				break
+			}
+		}
+		if !known {
+			secretValues = append(secretValues, form)
+		}
+	}
+	sort.SliceStable(secretValues, func(i, j int) bool {
+		return len(secretValues[i]) > len(secretValues[j])
+	})
+}
+
+// ScrubSecrets replaces every registered credential in s with [REDACTED].
+func ScrubSecrets(s string) string {
+	secretsMu.RLock()
+	defer secretsMu.RUnlock()
+	for _, secret := range secretValues {
+		s = strings.ReplaceAll(s, secret, "[REDACTED]")
+	}
+	return s
+}
+
+// ScrubSecretValues masks registered credentials inside a decoded JSON value.
+// A number equal to a credential becomes the string [REDACTED], so the value
+// still marshals to valid JSON.
+func ScrubSecretValues(v interface{}) interface{} {
+	switch val := v.(type) {
+	case string:
+		return ScrubSecrets(val)
+	case json.Number:
+		if n, ok := new(big.Rat).SetString(val.String()); ok && isRegisteredNumber(n) {
+			return "[REDACTED]"
+		}
+	case float64:
+		if n := new(big.Rat); n.SetFloat64(val) != nil && isRegisteredNumber(n) {
+			return "[REDACTED]"
+		}
+	case map[string]interface{}:
+		out := make(map[string]interface{}, len(val))
+		for k, child := range val {
+			out[ScrubSecrets(k)] = ScrubSecretValues(child)
+		}
+		return out
+	case []interface{}:
+		out := make([]interface{}, len(val))
+		for i, child := range val {
+			out[i] = ScrubSecretValues(child)
+		}
+		return out
+	}
+	return v
+}
+
+// isRegisteredNumber compares numerically, so 123456.0 and 1.23456e5 match a
+// registered 123456.
+func isRegisteredNumber(n *big.Rat) bool {
+	secretsMu.RLock()
+	defer secretsMu.RUnlock()
+	for _, secret := range secretValues {
+		if s, ok := new(big.Rat).SetString(secret); ok && s.Cmp(n) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // ResolveCredential resolves a credential value using the priority chain:
-// flag > env var > config file. Returns the value and its source
-// ("flag", "env", "config", or "unset").
+// flag > env var > config file > flag default. Returns the value and its source
+// ("flag", "env", "config", "default", or "unset").
 // Used for global parameters. For security credentials, use ResolveSecurityCredential
 // which includes the OS keychain tier.
-func ResolveCredential(cmd *cobra.Command, flagName string) (value, source string) {
-	if val, changed := flagutil.GetStringFlag(cmd, flagName); changed && val != "" {
-		return val, "flag"
+func ResolveCredential(cmd *cobra.Command, flagName string, hasSchemaDefault bool) (value, source string) {
+	flagValue, changed := flagutil.GetStringFlag(cmd, flagName)
+	if changed && flagValue != "" {
+		return flagValue, "flag"
 	}
 	if val := GetEnvValue(flagName); val != "" {
 		return val, "env"
@@ -162,7 +274,20 @@ func ResolveCredential(cmd *cobra.Command, flagName string) (value, source strin
 	if val := GetConfigValue(flagName); val != "" {
 		return val, "config"
 	}
+	if hasSchemaDefault && !changed && flagValue != "" {
+		return flagValue, "default"
+	}
 	return "", "unset"
+}
+func registeredSecret(value, source string) (string, string) {
+	RegisterSecret(value)
+	return value, source
+}
+
+// ResolveTokenCredential resolves a string token variant of a union
+// credential like ResolveCredential, recording it for ScrubSecrets.
+func ResolveTokenCredential(cmd *cobra.Command, flagName string) (value, source string) {
+	return registeredSecret(ResolveCredential(cmd, flagName, false))
 }
 
 // ResolveSecurityCredential resolves a security credential using the priority chain:
@@ -171,19 +296,128 @@ func ResolveCredential(cmd *cobra.Command, flagName string) (value, source strin
 // This is used for security fields (tokens, API keys, passwords). For global
 // parameters, use ResolveCredential which skips the keyring tier.
 func ResolveSecurityCredential(cmd *cobra.Command, flagName string) (value, source string) {
-	if val, changed := flagutil.GetStringFlag(cmd, flagName); changed && val != "" {
-		return val, "flag"
-	}
-	if val := GetEnvValue(flagName); val != "" {
-		return val, "env"
+	if val, source := ResolveExplicitSecurityCredential(cmd, flagName); val != "" {
+		return val, source
 	}
 	if val := GetKeyringValue(flagName); val != "" {
-		return val, "keyring"
+		return registeredSecret(val, "keyring")
 	}
 	if val := GetConfigValue(flagName); val != "" {
-		return val, "config"
+		return registeredSecret(val, "config")
 	}
 	return "", "unset"
+}
+
+// ResolveExplicitSecurityCredential resolves a security credential from the
+// flag or env var only, without touching the OS keychain or the config file.
+func ResolveExplicitSecurityCredential(cmd *cobra.Command, flagName string) (value, source string) {
+	if val, changed := flagutil.GetStringFlag(cmd, flagName); changed && val != "" {
+		return registeredSecret(val, "flag")
+	}
+	if val := GetEnvValue(flagName); val != "" {
+		return registeredSecret(val, "env")
+	}
+	return "", "unset"
+}
+
+// ResolveRequestSecurityCredential skips the OS keychain on --dry-run (keychain reads can prompt).
+func ResolveRequestSecurityCredential(cmd *cobra.Command, flagName string) (value, source string) {
+	if val, source := ResolveExplicitSecurityCredential(cmd, flagName); val != "" {
+		return val, source
+	}
+	dryRun, _ := flagutil.GetBoolFlag(cmd, "dry-run")
+	if !dryRun {
+		if val := GetKeyringValue(flagName); val != "" {
+			return registeredSecret(val, "keyring")
+		}
+	}
+	if val := GetConfigValue(flagName); val != "" {
+		return registeredSecret(val, "config")
+	}
+	return "", "unset"
+}
+
+const credentialRankUnset = 4
+
+// CredentialSourceRank ranks a credential source; lower is more explicit and unset ranks last.
+func CredentialSourceRank(source string) int {
+	switch source {
+	case "flag":
+		return 0
+	case "env":
+		return 1
+	case "keyring":
+		return 2
+	case "config":
+		return 3
+	}
+	return credentialRankUnset
+}
+
+type CredentialCandidate struct {
+	// Field is the Go field name of the alternative on the Security struct.
+	Field string
+	// Complete reports whether every mandatory member of the alternative is set.
+	Complete bool
+	// Sources are the sources of the alternative's members ("unset" allowed).
+	Sources []string
+}
+
+func (c CredentialCandidate) bestSourceRank() int {
+	best := credentialRankUnset
+	for _, source := range c.Sources {
+		if rank := CredentialSourceRank(source); rank < best {
+			best = rank
+		}
+	}
+	return best
+}
+
+// PickCredential returns the index of the alternative to send, or -1 when none is eligible.
+func PickCredential(candidates []CredentialCandidate, allowedFields []string) int {
+	order := make([]int, 0, len(candidates))
+	if len(allowedFields) > 0 {
+		for _, field := range allowedFields {
+			for i, candidate := range candidates {
+				if candidate.Field == field {
+					order = append(order, i)
+				}
+			}
+		}
+	} else {
+		for i := range candidates {
+			order = append(order, i)
+		}
+	}
+
+	best, bestKey := -1, [2]int{}
+	for _, i := range order {
+		rank := candidates[i].bestSourceRank()
+		if rank == credentialRankUnset {
+			continue
+		}
+		key := [2]int{rank, 1}
+		if candidates[i].Complete {
+			key[1] = 0
+		}
+		if best == -1 || key[0] < bestKey[0] || (key[0] == bestKey[0] && key[1] < bestKey[1]) {
+			best, bestKey = i, key
+		}
+	}
+	return best
+}
+
+// PickExplicitCredential is PickCredential restricted to the complete
+// alternatives supplied by a flag or env var; -1 when there is none.
+func PickExplicitCredential(candidates []CredentialCandidate, allowedFields []string) int {
+	explicit := make([]CredentialCandidate, len(candidates))
+	for i, candidate := range candidates {
+		explicit[i] = CredentialCandidate{Field: candidate.Field}
+		if candidate.Complete && candidate.bestSourceRank() <= CredentialSourceRank("env") {
+			explicit[i] = candidate
+		}
+	}
+	return PickCredential(explicit, allowedFields)
 }
 
 // GetConfigPath returns the path to the configuration file.
