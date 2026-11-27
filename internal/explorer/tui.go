@@ -5,10 +5,11 @@ package explorer
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // navFrame stores state when entering a group, allowing restoration on back.
@@ -62,13 +63,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
-	case tea.MouseMsg:
-		if msg.Action == tea.MouseActionRelease && msg.Button == tea.MouseButtonLeft {
+	case tea.MouseReleaseMsg:
+		if msg.Button == tea.MouseLeft {
 			return m.handleClick(msg.X, msg.Y)
 		}
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if m.searching {
 			return m.updateSearch(msg)
 		}
@@ -104,16 +105,7 @@ func (m model) handleClick(x, y int) (tea.Model, tea.Cmd) {
 	if m.searching && m.searchResults != nil {
 		total := len(m.searchResults)
 
-		// Compute the displayed range, mirroring renderList logic
-		listRows := m.listRowsAvailable(false)
-		dispEnd := m.scrollOffset + listRows
-		if dispEnd > total {
-			dispEnd = total
-		}
-		hasOverflow := m.scrollOffset > 0 || dispEnd < total
-		if hasOverflow && dispEnd-m.scrollOffset > 1 {
-			dispEnd--
-		}
+		_, dispEnd, hasOverflow := m.listWindow(total)
 		displayedCount := dispEnd - m.scrollOffset
 
 		// Ignore clicks on the scroll indicator row
@@ -148,17 +140,7 @@ func (m model) handleClick(x, y int) (tea.Model, tea.Cmd) {
 
 	items := m.visibleItems()
 
-	listRows := m.listRowsAvailable(m.hasBack())
-
-	// Compute displayed range, mirroring renderList logic
-	dispEnd := m.scrollOffset + listRows
-	if dispEnd > len(items) {
-		dispEnd = len(items)
-	}
-	hasOverflow := m.scrollOffset > 0 || dispEnd < len(items)
-	if hasOverflow && dispEnd-m.scrollOffset > 1 {
-		dispEnd--
-	}
+	_, dispEnd, hasOverflow := m.listWindow(len(items))
 	displayedCount := dispEnd - m.scrollOffset
 
 	// Determine what's at this row: items, scroll indicator, or Back button
@@ -246,7 +228,7 @@ func (m model) goBack() model {
 	return m
 }
 
-func (m model) updateNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m model) updateNav(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	total := m.totalItems()
 
 	switch {
@@ -307,8 +289,8 @@ func (m model) updateNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) updateSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.Type {
+func (m model) updateSearch(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
 	case tea.KeyEscape:
 		m.searching = false
 		m.filter = ""
@@ -339,7 +321,8 @@ func (m model) updateSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyBackspace, tea.KeyDelete:
 		if len(m.filter) > 0 {
-			m.filter = m.filter[:len(m.filter)-1]
+			_, size := utf8.DecodeLastRuneInString(m.filter)
+			m.filter = m.filter[:len(m.filter)-size]
 			m.applyFilter()
 		}
 		return m, nil
@@ -368,8 +351,8 @@ func (m model) updateSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	// Normal character input
-	if msg.Type == tea.KeyRunes {
-		m.filter += string(msg.Runes)
+	if msg.Text != "" && !msg.Mod.Contains(tea.ModCtrl) && !msg.Mod.Contains(tea.ModAlt) {
+		m.filter += msg.Text
 		m.applyFilter()
 	}
 
@@ -386,6 +369,7 @@ func (m *model) applyFilter() {
 		m.filtered = nil
 		m.searchResults = nil
 		m.cursor = 0
+		m.scrollOffset = 0
 		return
 	}
 	// Deep search from root across the entire tree
@@ -427,21 +411,15 @@ func (m model) listRowsAvailable(includeBack bool) int {
 }
 
 func (m *model) ensureVisible(items []int) {
-	rows := m.listRowsAvailable(m.hasBack() && !(m.searching && m.searchResults != nil))
+	total := len(items)
+	if m.inDeepSearch() {
+		total = len(m.searchResults)
+	}
+	rows := m.listRowsAvailable(m.hasBack() && !m.inDeepSearch())
 	if rows <= 0 {
 		return
 	}
-
-	// Account for scroll indicator: when items overflow the viewport,
-	// renderList reserves one row for the indicator, reducing visible items by 1.
-	total := len(items)
-	if m.searching && m.searchResults != nil {
-		total = len(m.searchResults)
-	}
-	visible := rows
-	if total > rows && rows > 1 {
-		visible = rows - 1
-	}
+	visible := visibleListItems(total, rows)
 
 	if m.cursor < m.scrollOffset {
 		m.scrollOffset = m.cursor
@@ -449,6 +427,32 @@ func (m *model) ensureVisible(items []int) {
 	if m.cursor >= m.scrollOffset+visible {
 		m.scrollOffset = m.cursor - visible + 1
 	}
+}
+
+func (m model) inDeepSearch() bool {
+	return m.searching && m.searchResults != nil
+}
+
+// visibleListItems returns how many of total items fit in rows, keeping one
+// row for the scroll indicator when they overflow.
+func visibleListItems(total, rows int) int {
+	if total > rows && rows > 1 {
+		return rows - 1
+	}
+	return rows
+}
+
+// listWindow returns the range of items rendered from the current scroll
+// offset and whether the scroll indicator row is shown. renderList and mouse
+// hit-testing must agree with ensureVisible on this range.
+func (m model) listWindow(total int) (start, end int, indicator bool) {
+	rows := m.listRowsAvailable(m.hasBack() && !m.inDeepSearch())
+	start = m.scrollOffset
+	end = start + max(visibleListItems(total, rows), 0)
+	if end > total {
+		end = total
+	}
+	return start, end, start > 0 || end < total
 }
 
 func (m model) listHeight() int {
@@ -460,8 +464,15 @@ func (m model) listHeight() int {
 	return h
 }
 
-// View renders the two-panel layout.
-func (m model) View() string {
+func (m model) View() tea.View {
+	v := tea.NewView(m.render())
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
+}
+
+// render draws the two-panel layout.
+func (m model) render() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
 	}
@@ -579,8 +590,6 @@ func padToHeight(content string, height int) string {
 }
 
 func (m model) renderList(width int) string {
-	listRows := m.listRowsAvailable(m.hasBack())
-
 	var b strings.Builder
 
 	maxNameLen := width - 6 // account for "  " prefix + padding
@@ -591,20 +600,9 @@ func (m model) renderList(width int) string {
 	// Deep search mode: render flat search results
 	if m.searching && m.searchResults != nil {
 		total := len(m.searchResults)
-		start := m.scrollOffset
-		end := start + listRows
-		if end > total {
-			end = total
-		}
-
+		start, end, _ := m.listWindow(total)
 		hasAbove := start > 0
 		hasBelow := end < total
-
-		// Reserve a row for the scroll indicator when items overflow
-		if (hasAbove || hasBelow) && end-start > 1 {
-			end--
-			hasBelow = end < total
-		}
 
 		for vi := start; vi < end; vi++ {
 			result := m.searchResults[vi]
@@ -649,20 +647,9 @@ func (m model) renderList(width int) string {
 	// Normal navigation mode: render current level's children
 	items := m.visibleItems()
 
-	start := m.scrollOffset
-	end := start + listRows
-	if end > len(items) {
-		end = len(items)
-	}
-
+	start, end, _ := m.listWindow(len(items))
 	hasAbove := start > 0
 	hasBelow := end < len(items)
-
-	// Reserve a row for the scroll indicator when items overflow
-	if (hasAbove || hasBelow) && end-start > 1 {
-		end--
-		hasBelow = end < len(items)
-	}
 
 	for vi := start; vi < end; vi++ {
 		idx := items[vi]

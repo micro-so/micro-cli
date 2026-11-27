@@ -4,6 +4,7 @@ package sdkerrors
 
 import (
 	"encoding/json"
+	"fmt"
 	"openapi/internal/sdk/models/components"
 )
 
@@ -16,6 +17,15 @@ type Error struct {
 var _ error = &Error{}
 
 func (e *Error) Error() string {
+	if e != nil {
+		if e.Error_.Message != "" {
+			if e.Error_.Code != "" {
+				return fmt.Sprintf("%v: %s", e.Error_.Code, e.Error_.Message)
+			}
+			return e.Error_.Message
+		}
+	}
+
 	data, _ := json.Marshal(e)
 	return string(data)
 }
